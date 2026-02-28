@@ -56,7 +56,7 @@
 ## Project Structure
 
 ```
-echo-tv/
+Auralis/
 ├── appinfo.json              # webOS app manifest (com.echo.tv)
 ├── icon.png                  # App launcher icon (500×500)
 ├── index.html                # Main HTML entry point
@@ -97,7 +97,7 @@ echo-tv/
 ### Build the IPK
 
 ```bash
-cd echo-tv
+cd Auralis
 ares-package . -o ..
 ```
 
