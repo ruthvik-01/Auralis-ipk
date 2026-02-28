@@ -22,7 +22,7 @@
 
 ### 🎵 Playback
 
-- **High-quality streaming** — 320 kbps audio via JioSaavn
+- **High-quality streaming** — 320 kbps audio via External api 
 - **Full queue management** — play next, remove from queue, shuffle, repeat
 - **Immersive full player** — album art background with blur, seekbar, and controls
 - **Queue side panel** — view upcoming tracks and recently played without leaving the player
@@ -68,10 +68,7 @@ echo-tv/
     │   ├── dpad.js            # D-Pad / remote navigation
     │   └── pointer.js         # Magic Remote pointer support
     ├── player/
-    │   └── playback.js        # HTML5 Audio playback engine
-    └── sources/
-        ├── saavn.js           # JioSaavn API module
-        └── ytmusic.js         # YouTube Music module
+        └── playback.js        
 ```
 
 ---
@@ -84,7 +81,7 @@ echo-tv/
 | UI           | Vanilla HTML / CSS / JavaScript |
 | Font         | Montserrat (Google Fonts)       |
 | Audio        | HTML5 Audio API                 |
-| Music Source | JioSaavn (official + proxy)     |
+| Music Source | External api  |
 | Storage      | localStorage                    |
 | Packaging    | ares-package (webOS CLI)        |
 
@@ -149,7 +146,7 @@ ares-launch --device <your-tv> com.echo.tv
 
 ## Credits
 
-Made with ♥ by **Ruthvik**
+Made by **Ruthvik**
 
 ---
 
