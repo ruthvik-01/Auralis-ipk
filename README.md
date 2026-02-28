@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>A beautiful, Spotify-inspired music streaming app built for LG Smart TVs.</strong><br/>
-  Stream millions of songs via JioSaavn — optimized for D-Pad, Magic Remote, and 4K displays.
+  Stream millions of songs — optimized for D-Pad, Magic Remote, and 4K displays.
 </p>
 
 <p align="center">
