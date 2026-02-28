@@ -170,6 +170,15 @@ img { display: block; object-fit: cover; }
   background: var(--sp-green); color: #000;
 }
 
+/* ========== Settings Credit ========== */
+.settings-credit {
+  text-align: center; font-size: 12px; color: var(--fg-tertiary);
+  margin-top: 24px; letter-spacing: 0.3px; opacity: 0.7;
+}
+.settings-credit .credit-name {
+  font-weight: 600; color: var(--fg-secondary);
+}
+
 /* ========== Content Area ========== */
 .content-area {
   grid-area: content; overflow-y: auto; overflow-x: hidden;
