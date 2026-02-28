@@ -582,6 +582,38 @@
             </div>
           </div>
           <!-- end full-player-right -->
+
+          <!-- Spotify-style Queue Side Panel -->
+          <div id="queue-side-panel" class="queue-side-panel">
+            <div class="qsp-header">
+              <div class="qsp-tabs">
+                <button class="focusable qsp-tab active" id="qsp-tab-queue" data-qsp-tab="queue">Queue</button>
+                <button class="focusable qsp-tab" id="qsp-tab-recent" data-qsp-tab="recent">Recently played</button>
+              </div>
+              <button class="focusable qsp-close" id="qsp-close" aria-label="Close queue">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Queue View -->
+            <div id="qsp-queue-view" class="qsp-view">
+              <div class="qsp-section">
+                <h4 class="qsp-section-title">Now playing</h4>
+                <div id="qsp-now-playing" class="qsp-now-playing"></div>
+              </div>
+              <div class="qsp-section">
+                <h4 class="qsp-section-title" id="qsp-next-label">Next from</h4>
+                <div id="qsp-next-list" class="qsp-track-list"></div>
+              </div>
+            </div>
+
+            <!-- Recently Played View -->
+            <div id="qsp-recent-view" class="qsp-view hidden">
+              <div id="qsp-recent-list" class="qsp-track-list"></div>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -83,10 +83,21 @@
     fullBtnLike:      $('full-btn-like'),
     fullBtnAddPlaylist: $('full-btn-add-playlist'),
     fullBtnQueue:     $('full-btn-queue'),
-    /* Queue overlay */
+    /* Queue overlay (fallback) */
     queueOverlay:     $('queue-overlay'),
     queueList:        $('queue-list'),
     queueTrackCount:  $('queue-track-count'),
+    /* Queue side panel */
+    queueSidePanel:   $('queue-side-panel'),
+    qspTabQueue:      $('qsp-tab-queue'),
+    qspTabRecent:     $('qsp-tab-recent'),
+    qspClose:         $('qsp-close'),
+    qspQueueView:     $('qsp-queue-view'),
+    qspRecentView:    $('qsp-recent-view'),
+    qspNowPlaying:    $('qsp-now-playing'),
+    qspNextLabel:     $('qsp-next-label'),
+    qspNextList:      $('qsp-next-list'),
+    qspRecentList:    $('qsp-recent-list'),
     /* Overlays */
     settingsOverlay:  $('settings-overlay'),
     themeGrid:        $('theme-grid'),
@@ -108,6 +119,8 @@
   var trackForPlaylistAdd = null;  /* track waiting to be added to playlist */
   var isDraggingProgress = false;
   var isDraggingFullProgress = false;
+  var isQueuePanelOpen = false;
+  var qspActiveTab = 'queue';
 
   /* ========== Utility ========== */
   function formatTime(s) {
@@ -688,10 +701,12 @@
   function openFullPlayer() {
     el.fullPlayer.classList.remove('hidden', 'closing');
     updateFullPlayerQueue();
+    if (isQueuePanelOpen) renderQueuePanel();
     if (window.DpadNav) window.DpadNav.refresh();
   }
 
   function closeFullPlayer() {
+    if (isQueuePanelOpen) closeQueuePanel();
     el.fullPlayer.classList.add('closing');
     setTimeout(function () {
       el.fullPlayer.classList.add('hidden');
@@ -736,6 +751,108 @@
   function openQueueOverlay() {
     updateFullPlayerQueue();
     openOverlay(el.queueOverlay);
+  }
+
+  /* ========== Queue Side Panel (Spotify-style) ========== */
+  function toggleQueuePanel() {
+    if (isQueuePanelOpen) closeQueuePanel();
+    else openQueuePanel();
+  }
+
+  function openQueuePanel() {
+    isQueuePanelOpen = true;
+    el.fullPlayer.classList.add('qsp-open');
+    renderQueuePanel();
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function closeQueuePanel() {
+    isQueuePanelOpen = false;
+    el.fullPlayer.classList.remove('qsp-open');
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function switchQspTab(tab) {
+    qspActiveTab = tab;
+    el.qspTabQueue.classList.toggle('active', tab === 'queue');
+    el.qspTabRecent.classList.toggle('active', tab === 'recent');
+    el.qspQueueView.classList.toggle('hidden', tab !== 'queue');
+    el.qspRecentView.classList.toggle('hidden', tab !== 'recent');
+    if (tab === 'queue') renderQueuePanel();
+    else renderRecentPanel();
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function createQspTrack(track, clickHandler) {
+    var item = document.createElement('div');
+    item.className = 'qsp-track focusable';
+    item.tabIndex = 0;
+    var art = track.cover || track.image || track.artwork || '';
+    var artist = stripHtml(track.artist || track.artists || '');
+    item.innerHTML =
+      '<img class="qsp-track-art" src="' + art + '" alt="">' +
+      '<div class="qsp-track-info">' +
+        '<div class="qsp-track-title">' + stripHtml(track.title || 'Unknown') + '</div>' +
+        '<div class="qsp-track-meta">' +
+          '<span class="qsp-track-indicator">' +
+            '<svg width="12" height="12" viewBox="0 0 16 16" fill="var(--sp-green)"><circle cx="8" cy="8" r="4"/></svg>' +
+          '</span>' +
+          '<span class="qsp-track-artist">' + artist + '</span>' +
+        '</div>' +
+      '</div>';
+    if (clickHandler) item.addEventListener('click', clickHandler);
+    return item;
+  }
+
+  function renderQueuePanel() {
+    var queue = window.EchoPlayback.getQueue();
+    var state = window.EchoPlayback.getState();
+    var currentTrack = window.EchoPlayback.getCurrentTrack();
+
+    /* Now Playing */
+    el.qspNowPlaying.innerHTML = '';
+    if (currentTrack) {
+      el.qspNowPlaying.appendChild(createQspTrack(currentTrack));
+    } else {
+      el.qspNowPlaying.innerHTML = '<p style="color:var(--fg-tertiary);padding:8px;font-size:13px;">Nothing playing</p>';
+    }
+
+    /* Next from */
+    el.qspNextList.innerHTML = '';
+    var nextTracks = [];
+    for (var i = (state.currentIndex >= 0 ? state.currentIndex + 1 : 0); i < queue.length; i++) {
+      nextTracks.push({ track: queue[i], index: i });
+    }
+    if (nextTracks.length === 0) {
+      el.qspNextLabel.textContent = 'Next in queue';
+      el.qspNextList.innerHTML = '<p style="color:var(--fg-tertiary);padding:8px;font-size:13px;">No upcoming tracks</p>';
+    } else {
+      el.qspNextLabel.textContent = 'Next from: Queue';
+      nextTracks.forEach(function (entry) {
+        var trackEl = createQspTrack(entry.track, function () {
+          window.EchoPlayback.playAt(entry.index);
+        });
+        el.qspNextList.appendChild(trackEl);
+      });
+    }
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function renderRecentPanel() {
+    var recent = window.EchoPlayback.getRecentlyPlayed();
+    el.qspRecentList.innerHTML = '';
+    if (!recent || recent.length === 0) {
+      el.qspRecentList.innerHTML = '<p style="color:var(--fg-tertiary);padding:8px;font-size:13px;">No recently played tracks</p>';
+      return;
+    }
+    recent.forEach(function (track) {
+      var trackEl = createQspTrack(track, function () {
+        track.source = track.source || 'saavn';
+        window.EchoPlayback.setQueue([track], 0);
+      });
+      el.qspRecentList.appendChild(trackEl);
+    });
+    if (window.DpadNav) window.DpadNav.refresh();
   }
 
   /* ========== Overlay helpers ========== */
@@ -912,13 +1029,24 @@
       if (track) openAddToPlaylist(track);
     });
     el.fullBtnQueue.addEventListener('click', function () {
-      openQueueOverlay();
+      toggleQueuePanel();
     });
+
+    /* -- Queue side panel tabs & close -- */
+    el.qspTabQueue.addEventListener('click', function () { switchQspTab('queue'); });
+    el.qspTabRecent.addEventListener('click', function () { switchQspTab('recent'); });
+    el.qspClose.addEventListener('click', function () { closeQueuePanel(); });
 
     /* -- Player bar right controls -- */
     var barQueueBtn = document.getElementById('btn-queue');
     if (barQueueBtn) barQueueBtn.addEventListener('click', function () {
-      openQueueOverlay();
+      var track = window.EchoPlayback.getCurrentTrack();
+      if (track) {
+        openFullPlayer();
+        setTimeout(function () { if (!isQueuePanelOpen) openQueuePanel(); }, 50);
+      } else {
+        openQueueOverlay();
+      }
     });
     var barAddBtn = document.getElementById('btn-add-to-playlist');
     if (barAddBtn) barAddBtn.addEventListener('click', function () {
@@ -955,6 +1083,7 @@
     window.EchoPlayback.on('trackchange', function (track) {
       updatePlayerUI(track);
       updateFullPlayerQueue();
+      if (isQueuePanelOpen) renderQueuePanel();
     });
     window.EchoPlayback.on('statechange', function (data) {
       updatePlayState(data.isPlaying);
@@ -984,6 +1113,8 @@
           closeOverlay(el.settingsOverlay);
         } else if (!el.playlistOverlay.classList.contains('hidden')) {
           closeOverlay(el.playlistOverlay);
+        } else if (!el.fullPlayer.classList.contains('hidden') && isQueuePanelOpen) {
+          closeQueuePanel();
         } else if (!el.fullPlayer.classList.contains('hidden')) {
           closeFullPlayer();
         } else if (activeTab !== 'home') {
