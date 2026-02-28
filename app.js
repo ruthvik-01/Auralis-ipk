@@ -80,6 +80,8 @@
     fullBtnNext:      $('full-btn-next'),
     fullBtnShuffle:   $('full-btn-shuffle'),
     fullBtnRepeat:    $('full-btn-repeat'),
+    fullHeartOutline: $('full-icon-heart-outline'),
+    fullHeartFilled:  $('full-icon-heart-filled'),
     fullBtnLike:      $('full-btn-like'),
     fullBtnAddPlaylist: $('full-btn-add-playlist'),
     fullBtnQueue:     $('full-btn-queue'),
@@ -98,6 +100,10 @@
     qspNextLabel:     $('qsp-next-label'),
     qspNextList:      $('qsp-next-list'),
     qspRecentList:    $('qsp-recent-list'),
+    /* Context menu */
+    qspContextMenu:   $('qsp-context-menu'),
+    qspCtxPlayNext:   $('qsp-ctx-play-next'),
+    qspCtxRemove:     $('qsp-ctx-remove'),
     /* Overlays */
     settingsOverlay:  $('settings-overlay'),
     themeGrid:        $('theme-grid'),
@@ -107,6 +113,18 @@
     btnPlaylistCreate: $('btn-playlist-create'),
     addToPlaylistOverlay: $('add-to-playlist-overlay'),
     addPlaylistList:  $('add-playlist-list'),
+    /* Playlist context menu */
+    plCtxMenu:        $('pl-context-menu'),
+    plCtxRename:      $('pl-ctx-rename'),
+    plCtxDelete:      $('pl-ctx-delete'),
+    /* Rename overlay */
+    renameOverlay:    $('rename-playlist-overlay'),
+    renameInput:      $('rename-playlist-input'),
+    btnRenameSave:    $('btn-rename-save'),
+    /* Delete confirm overlay */
+    deleteOverlay:    $('delete-playlist-overlay'),
+    deleteNameLabel:  $('delete-playlist-name'),
+    btnDeleteConfirm: $('btn-delete-confirm'),
     /* Toast */
     toast:            $('toast'),
     contentArea:      $('content-area')
@@ -121,6 +139,10 @@
   var isDraggingFullProgress = false;
   var isQueuePanelOpen = false;
   var qspActiveTab = 'queue';
+  var contextMenuTrack = null;
+  var playlistCtxId = null;    /* playlist id for context menu */
+  var playlistCtxName = null;  /* playlist name for context menu */
+  var contextMenuIndex = -1;
 
   /* ========== Utility ========== */
   function formatTime(s) {
@@ -176,6 +198,13 @@
       pl.tracks.push({ id: track.id, title: track.title, artist: track.artist, cover: track.cover || track.image, duration: track.duration });
       PlaylistManager._save(list);
       return true;
+    },
+    rename: function (id, newName) {
+      var list = PlaylistManager._load();
+      var pl = list.find(function (p) { return p.id === id; });
+      if (!pl) return;
+      pl.name = newName;
+      PlaylistManager._save(list);
     },
     removeTrack: function (playlistId, trackId) {
       var list = PlaylistManager._load();
@@ -386,7 +415,17 @@
       '<div class="music-card-info">' +
         '<div class="music-card-title">' + stripHtml(playlist.name) + '</div>' +
         '<div class="music-card-subtitle">' + count + ' song' + (count !== 1 ? 's' : '') + '</div>' +
-      '</div>';
+      '</div>' +
+      '<button class="pl-card-more focusable" aria-label="More options">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>' +
+      '</button>';
+
+    /* 3-dot opens playlist context menu */
+    var moreBtn = card.querySelector('.pl-card-more');
+    moreBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openPlaylistContextMenu(playlist.id, playlist.name, moreBtn);
+    });
 
     card.addEventListener('click', function () {
       var tracks = PlaylistManager.getTracks(playlist.id);
@@ -635,6 +674,8 @@
 
     /* Full player like button */
     el.fullBtnLike.classList.toggle('liked', liked);
+    el.fullHeartOutline.classList.toggle('hidden', liked);
+    el.fullHeartFilled.classList.toggle('hidden', !liked);
   }
 
   function updateShuffleRepeatUI() {
@@ -783,13 +824,13 @@
     if (window.DpadNav) window.DpadNav.refresh();
   }
 
-  function createQspTrack(track, clickHandler) {
+  function createQspTrack(track, clickHandler, queueIndex) {
     var item = document.createElement('div');
     item.className = 'qsp-track focusable';
     item.tabIndex = 0;
     var art = track.cover || track.image || track.artwork || '';
     var artist = stripHtml(track.artist || track.artists || '');
-    item.innerHTML =
+    var html =
       '<img class="qsp-track-art" src="' + art + '" alt="">' +
       '<div class="qsp-track-info">' +
         '<div class="qsp-track-title">' + stripHtml(track.title || 'Unknown') + '</div>' +
@@ -800,8 +841,116 @@
           '<span class="qsp-track-artist">' + artist + '</span>' +
         '</div>' +
       '</div>';
-    if (clickHandler) item.addEventListener('click', clickHandler);
+    /* Add 3-dot more button for queue tracks (not now-playing) */
+    if (typeof queueIndex === 'number') {
+      html += '<button class="qsp-track-more focusable" tabindex="0" aria-label="More options">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">' +
+          '<circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>' +
+        '</svg></button>';
+    }
+    item.innerHTML = html;
+    if (clickHandler) {
+      /* click on the track info plays it */
+      var infoArea = item.querySelector('.qsp-track-info');
+      var artArea = item.querySelector('.qsp-track-art');
+      if (infoArea) infoArea.addEventListener('click', clickHandler);
+      if (artArea) artArea.addEventListener('click', clickHandler);
+    }
+    /* Bind 3-dot button */
+    if (typeof queueIndex === 'number') {
+      var moreBtn = item.querySelector('.qsp-track-more');
+      if (moreBtn) {
+        moreBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openTrackContextMenu(track, queueIndex, moreBtn);
+        });
+      }
+    }
     return item;
+  }
+
+  /* Context menu for queue tracks */
+  function openTrackContextMenu(track, queueIdx, anchorEl) {
+    contextMenuTrack = track;
+    contextMenuIndex = queueIdx;
+    var rect = anchorEl.getBoundingClientRect();
+    var menu = el.qspContextMenu;
+    menu.classList.remove('hidden');
+    /* Position near the button */
+    var menuW = 220, menuH = 90;
+    var left = rect.left - menuW - 8;
+    if (left < 10) left = rect.right + 8;
+    var top = rect.top;
+    if (top + menuH > window.innerHeight - 20) top = window.innerHeight - menuH - 20;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function closeTrackContextMenu() {
+    el.qspContextMenu.classList.add('hidden');
+    contextMenuTrack = null;
+    contextMenuIndex = -1;
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  /* ========== Playlist Context Menu ========== */
+  function openPlaylistContextMenu(plId, plName, anchorEl) {
+    playlistCtxId = plId;
+    playlistCtxName = plName;
+    var rect = anchorEl.getBoundingClientRect();
+    var menu = el.plCtxMenu;
+    menu.classList.remove('hidden');
+    var menuW = 220, menuH = 100;
+    var left = rect.right + 8;
+    if (left + menuW > window.innerWidth - 10) left = rect.left - menuW - 8;
+    var top = rect.top;
+    if (top + menuH > window.innerHeight - 20) top = window.innerHeight - menuH - 20;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function closePlaylistContextMenu() {
+    el.plCtxMenu.classList.add('hidden');
+    playlistCtxId = null;
+    playlistCtxName = null;
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  /* ========== Rename Playlist ========== */
+  function openRenamePlaylist(plId, plName) {
+    playlistCtxId = plId;
+    el.renameInput.value = plName;
+    el.btnRenameSave.disabled = false;
+    openOverlay(el.renameOverlay);
+    setTimeout(function () { el.renameInput.focus(); el.renameInput.select(); }, 100);
+  }
+
+  function doRenamePlaylist() {
+    var newName = el.renameInput.value.trim();
+    if (!newName || !playlistCtxId) return;
+    PlaylistManager.rename(playlistCtxId, newName);
+    closeOverlay(el.renameOverlay);
+    toast('Renamed to "' + newName + '"');
+    refreshLibrary();
+    refreshHomePersonal();
+  }
+
+  /* ========== Delete Playlist ========== */
+  function openDeletePlaylist(plId, plName) {
+    playlistCtxId = plId;
+    el.deleteNameLabel.textContent = '"' + plName + '"';
+    openOverlay(el.deleteOverlay);
+  }
+
+  function doDeletePlaylist() {
+    if (!playlistCtxId) return;
+    PlaylistManager.remove(playlistCtxId);
+    closeOverlay(el.deleteOverlay);
+    toast('Playlist deleted');
+    refreshLibrary();
+    refreshHomePersonal();
   }
 
   function renderQueuePanel() {
@@ -831,7 +980,7 @@
       nextTracks.forEach(function (entry) {
         var trackEl = createQspTrack(entry.track, function () {
           window.EchoPlayback.playAt(entry.index);
-        });
+        }, entry.index);
         el.qspNextList.appendChild(trackEl);
       });
     }
@@ -873,6 +1022,8 @@
     return !el.settingsOverlay.classList.contains('hidden') ||
            !el.playlistOverlay.classList.contains('hidden') ||
            !el.addToPlaylistOverlay.classList.contains('hidden') ||
+           !el.renameOverlay.classList.contains('hidden') ||
+           !el.deleteOverlay.classList.contains('hidden') ||
            !el.queueOverlay.classList.contains('hidden') ||
            !el.fullPlayer.classList.contains('hidden');
   }
@@ -1011,7 +1162,7 @@
     });
 
     /* -- Full player controls -- */
-    el.fullPlayerClose.addEventListener('click', closeFullPlayer);
+    if (el.fullPlayerClose) el.fullPlayerClose.addEventListener('click', closeFullPlayer);
     el.fullBtnPlay.addEventListener('click', function () { window.EchoPlayback.togglePlay(); });
     el.fullBtnPrev.addEventListener('click', function () { window.EchoPlayback.previous(); });
     el.fullBtnNext.addEventListener('click', function () { window.EchoPlayback.next(); });
@@ -1036,6 +1187,49 @@
     el.qspTabQueue.addEventListener('click', function () { switchQspTab('queue'); });
     el.qspTabRecent.addEventListener('click', function () { switchQspTab('recent'); });
     el.qspClose.addEventListener('click', function () { closeQueuePanel(); });
+
+    /* -- Context menu actions -- */
+    el.qspCtxPlayNext.addEventListener('click', function () {
+      if (contextMenuTrack) {
+        window.EchoPlayback.playNext(contextMenuTrack);
+        toast('Playing next: ' + stripHtml(contextMenuTrack.title || ''));
+        closeTrackContextMenu();
+        renderQueuePanel();
+      }
+    });
+    el.qspCtxRemove.addEventListener('click', function () {
+      if (contextMenuIndex >= 0) {
+        window.EchoPlayback.removeFromQueue(contextMenuIndex);
+        toast('Removed from queue');
+        closeTrackContextMenu();
+        renderQueuePanel();
+      }
+    });
+    /* Close context menu on click outside */
+    document.addEventListener('click', function (e) {
+      if (!el.qspContextMenu.classList.contains('hidden') &&
+          !el.qspContextMenu.contains(e.target) &&
+          !e.target.classList.contains('qsp-track-more')) {
+        closeTrackContextMenu();
+      }
+      if (!el.plCtxMenu.classList.contains('hidden') &&
+          !el.plCtxMenu.contains(e.target) &&
+          !e.target.closest('.pl-card-more')) {
+        closePlaylistContextMenu();
+      }
+    });
+
+    /* -- Playlist context menu actions -- */
+    el.plCtxRename.addEventListener('click', function () {
+      var id = playlistCtxId, name = playlistCtxName;
+      closePlaylistContextMenu();
+      if (id) openRenamePlaylist(id, name);
+    });
+    el.plCtxDelete.addEventListener('click', function () {
+      var id = playlistCtxId, name = playlistCtxName;
+      closePlaylistContextMenu();
+      if (id) openDeletePlaylist(id, name);
+    });
 
     /* -- Player bar right controls -- */
     var barQueueBtn = document.getElementById('btn-queue');
@@ -1068,12 +1262,30 @@
       if (e.keyCode === 13 && !el.btnPlaylistCreate.disabled) doCreatePlaylist();
     });
 
+    /* -- Rename playlist -- */
+    el.renameInput.addEventListener('input', function () {
+      el.btnRenameSave.disabled = !el.renameInput.value.trim();
+    });
+    el.btnRenameSave.addEventListener('click', doRenamePlaylist);
+    el.renameInput.addEventListener('keydown', function (e) {
+      if (e.keyCode === 13 && !el.btnRenameSave.disabled) doRenamePlaylist();
+    });
+
+    /* -- Delete playlist confirm -- */
+    el.btnDeleteConfirm.addEventListener('click', doDeletePlaylist);
+
     /* -- Close overlay buttons -- */
     document.querySelectorAll('[data-action="close-playlist-overlay"]').forEach(function (btn) {
       btn.addEventListener('click', function () { closeOverlay(el.playlistOverlay); });
     });
     document.querySelectorAll('[data-action="close-add-playlist"]').forEach(function (btn) {
       btn.addEventListener('click', function () { closeOverlay(el.addToPlaylistOverlay); });
+    });
+    document.querySelectorAll('[data-action="close-rename-overlay"]').forEach(function (btn) {
+      btn.addEventListener('click', function () { closeOverlay(el.renameOverlay); });
+    });
+    document.querySelectorAll('[data-action="close-delete-overlay"]').forEach(function (btn) {
+      btn.addEventListener('click', function () { closeOverlay(el.deleteOverlay); });
     });
     document.querySelectorAll('[data-action="close-queue"]').forEach(function (btn) {
       btn.addEventListener('click', function () { closeOverlay(el.queueOverlay); });
@@ -1105,7 +1317,15 @@
     /* -- D-Pad back handler -- */
     if (window.DpadNav) {
       window.DpadNav.onBack(function () {
-        if (!el.addToPlaylistOverlay.classList.contains('hidden')) {
+        if (!el.qspContextMenu.classList.contains('hidden')) {
+          closeTrackContextMenu();
+        } else if (!el.plCtxMenu.classList.contains('hidden')) {
+          closePlaylistContextMenu();
+        } else if (!el.renameOverlay.classList.contains('hidden')) {
+          closeOverlay(el.renameOverlay);
+        } else if (!el.deleteOverlay.classList.contains('hidden')) {
+          closeOverlay(el.deleteOverlay);
+        } else if (!el.addToPlaylistOverlay.classList.contains('hidden')) {
           closeOverlay(el.addToPlaylistOverlay);
         } else if (!el.queueOverlay.classList.contains('hidden')) {
           closeOverlay(el.queueOverlay);
@@ -1120,8 +1340,6 @@
         } else if (activeTab !== 'home') {
           switchTab('home');
         }
-        /* If already on home with no overlays, do nothing — just consume the event
-           to prevent webOS from exiting the app. */
       });
     }
   }

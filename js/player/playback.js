@@ -263,6 +263,24 @@
     emit('queuechange', state.queue);
   }
 
+  function playNext(track) {
+    var insertAt = state.currentIndex >= 0 ? state.currentIndex + 1 : 0;
+    state.queue.splice(insertAt, 0, track);
+    emit('queuechange', state.queue);
+  }
+
+  function removeFromQueue(index) {
+    if (index < 0 || index >= state.queue.length) return;
+    state.queue.splice(index, 1);
+    /* Adjust currentIndex if needed */
+    if (index < state.currentIndex) {
+      state.currentIndex--;
+    } else if (index === state.currentIndex) {
+      state.currentTrack = state.queue[state.currentIndex] || null;
+    }
+    emit('queuechange', state.queue);
+  }
+
   function clearQueue() {
     state.queue = [];
     state.currentIndex = -1;
@@ -309,6 +327,8 @@
     /* Queue */
     setQueue:       setQueue,
     addToQueue:     addToQueue,
+    playNext:       playNext,
+    removeFromQueue: removeFromQueue,
     clearQueue:     clearQueue,
     loadTrack:      loadTrack,
     playAt:         function (index) { if (index >= 0 && index < state.queue.length) loadTrack(index); },
