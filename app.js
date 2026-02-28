@@ -17,8 +17,7 @@
   var el = {
     app:              $('app'),
     /* Top bar */
-    qualityBadge:     $('quality-badge'),
-    qualityLabel:     $('quality-label'),
+
     /* Tabs */
     tabHome:          $('tab-home'),
     tabSearch:        $('tab-search'),
@@ -105,7 +104,6 @@
     /* Overlays */
     settingsOverlay:  $('settings-overlay'),
     themeGrid:        $('theme-grid'),
-    qualityOptions:   $('quality-options'),
     playlistOverlay:  $('playlist-overlay'),
     playlistNameInput: $('playlist-name-input'),
     btnPlaylistCreate: $('btn-playlist-create'),
@@ -285,24 +283,7 @@
     try { localStorage.setItem(SIDEBAR_KEY, size); } catch (e) {}
   }
 
-  /* ========== Quality Badge ========== */
-  function updateQualityBadge(quality) {
-    if (!quality) { el.qualityBadge.classList.add('hidden'); return; }
-    var label = 'SD';
-    if (quality === '320kbps') label = 'HD';
-    else if (quality === '160kbps') label = 'HQ';
-    else if (quality === '96kbps') label = 'MQ';
-    el.qualityLabel.textContent = label;
-    el.qualityBadge.classList.remove('hidden');
-  }
 
-  function syncQualityOptionUI() {
-    var pref = window.EchoPlayback.getQuality();
-    var opts = el.qualityOptions.querySelectorAll('.quality-option');
-    opts.forEach(function (o) {
-      o.classList.toggle('active', o.getAttribute('data-quality') === pref);
-    });
-  }
 
   /* ========== Card / Item Rendering ========== */
   function createMusicCard(track) {
@@ -1113,14 +1094,7 @@
         applyTheme(themeBtn.getAttribute('data-theme'));
         return;
       }
-      var qualityBtn = e.target.closest('#quality-options .quality-option');
-      if (qualityBtn) {
-        var q = qualityBtn.getAttribute('data-quality');
-        window.EchoPlayback.setQuality(q);
-        syncQualityOptionUI();
-        toast('Quality set to ' + q);
-        return;
-      }
+
       var sidebarBtn = e.target.closest('#sidebar-size-options .quality-option');
       if (sidebarBtn) {
         var sz = sidebarBtn.getAttribute('data-sidebar');
@@ -1318,9 +1292,7 @@
     window.EchoPlayback.on('timeupdate', function (data) {
       updateProgress(data.currentTime, data.duration);
     });
-    window.EchoPlayback.on('qualitychange', function (data) {
-      updateQualityBadge(data.quality);
-    });
+
     window.EchoPlayback.on('error', function (data) {
       toast(data.message || 'Playback error');
     });

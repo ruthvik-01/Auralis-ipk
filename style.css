@@ -162,13 +162,6 @@ img { display: block; object-fit: cover; }
 .app.nav-medium .nav-tab,
 .app.nav-large .nav-tab { width: auto; flex-direction: row; }
 
-/* Quality badge — floating top-right */
-.quality-badge {
-  position: fixed; top: 16px; right: 24px; z-index: 150;
-  display: flex; align-items: center; padding: 4px 10px;
-  border-radius: var(--radius-full); font-size: 10px; font-weight: 700; letter-spacing: 1px;
-  background: var(--sp-green); color: #000;
-}
 
 /* ========== Settings Credit ========== */
 .settings-credit {
@@ -617,7 +610,6 @@ img { display: block; object-fit: cover; }
 .theme-swatch { width: 44px; height: 44px; border-radius: var(--radius-md); }
 .theme-option span { font-size: 11px; color: var(--fg-secondary); }
 
-.quality-options { display: flex; flex-direction: column; gap: 6px; }
 .quality-option {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 18px; border-radius: var(--radius-lg); border: 2px solid transparent;

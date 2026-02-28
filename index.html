@@ -11,10 +11,6 @@
   <body>
     <!-- ===== Main App Container ===== -->
     <div id="app" class="app">
-      <!-- Quality Badge (floating) -->
-      <div id="quality-badge" class="quality-badge hidden">
-        <span id="quality-label">HD</span>
-      </div>
 
       <!-- Navigation — Centered Pill Bar -->
       <nav id="nav-bar" class="nav-bar">
@@ -527,26 +523,7 @@
               </button>
             </div>
           </div>
-          <div class="settings-group">
-            <h3 class="settings-group-title">Audio Quality</h3>
-            <div class="quality-options" id="quality-options">
-              <button class="focusable quality-option" data-quality="low">
-                <span class="quality-opt-label">Low</span>
-                <span class="quality-opt-desc">48 kbps</span>
-              </button>
-              <button class="focusable quality-option" data-quality="medium">
-                <span class="quality-opt-label">Medium</span>
-                <span class="quality-opt-desc">160 kbps</span>
-              </button>
-              <button
-                class="focusable quality-option active"
-                data-quality="high"
-              >
-                <span class="quality-opt-label">High</span>
-                <span class="quality-opt-desc">320 kbps HD</span>
-              </button>
-            </div>
-          </div>
+
           <button
             class="focusable overlay-close-btn"
             data-action="close-settings"
