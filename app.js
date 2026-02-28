@@ -1082,7 +1082,6 @@
     /* -- Top bar buttons -- */
     document.querySelectorAll('[data-action="settings"]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        syncQualityOptionUI();
         openOverlay(el.settingsOverlay);
       });
     });
@@ -1348,9 +1347,6 @@
 
     /* Bind all events */
     bindEvents();
-
-    /* Init quality UI */
-    syncQualityOptionUI();
 
     /* Load home feed */
     loadHomeFeed();
