@@ -26,6 +26,8 @@
   --color-heart: #1db954;
 
   --nav-width: 72px;
+  --nav-width-medium: 160px;
+  --nav-width-large: 240px;
   --player-height: 90px;
 
   --radius-sm: 4px;
@@ -99,64 +101,66 @@ button { background: none; border: none; color: inherit; font: inherit; cursor: 
 img { display: block; object-fit: cover; }
 .hidden { display: none !important; }
 
-/* ========== Splash ========== */
-.splash {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #000; display: flex; align-items: center; justify-content: center;
-  transition: opacity 500ms ease, visibility 500ms ease;
-}
-.splash.fade-out { opacity: 0; visibility: hidden; }
-.splash-logo {
-  display: flex; flex-direction: column; align-items: center; gap: 24px;
-  animation: splashBreath 2s ease-in-out infinite;
-}
-@keyframes splashBreath { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.04);opacity:0.85} }
 
-/* ========== App Shell — Spotify layout ========== */
+
+/* ========== App Shell — Spotify TV layout ========== */
 .app {
   position: relative; width: 1920px; height: 1080px;
   display: grid;
-  grid-template-rows: 1fr var(--player-height);
-  grid-template-columns: var(--nav-width) 1fr;
+  grid-template-rows: auto 1fr var(--player-height);
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "nav content"
-    "player player";
+    "nav"
+    "content"
+    "player";
   background: var(--bg-primary);
 }
 
-/* ========== Left Navigation Rail ========== */
+/* ========== Top Navigation — Centered Pill Bar ========== */
 .top-bar { display: none; }
 
 .nav-bar {
-  grid-area: nav; display: flex; flex-direction: column;
-  align-items: center; padding-top: 20px; gap: 4px;
-  background: var(--bg-primary);
-  border-right: 1px solid rgba(255,255,255,0.04); z-index: 100;
+  grid-area: nav; display: flex; flex-direction: row;
+  align-items: center; justify-content: center;
+  padding: 16px 40px; gap: 0;
+  background: transparent; z-index: 100;
+}
+.nav-pill {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg-elevated); border-radius: var(--radius-full);
+  padding: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 .nav-tab {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; width: 56px; height: 56px; border-radius: var(--radius-md);
-  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
-  color: var(--fg-tertiary); position: relative;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; height: 44px; padding: 0 24px; border-radius: var(--radius-full);
+  font-size: 14px; font-weight: 600; letter-spacing: 0.2px;
+  color: var(--fg-secondary); position: relative;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
-.nav-tab svg { width: 24px; height: 24px; }
-.nav-tab.active { color: var(--fg-primary); }
-.nav-tab.active::after {
-  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 24px; border-radius: 0 3px 3px 0; background: var(--sp-green);
-}
-.nav-tab:hover, .nav-tab.focused { color: var(--fg-primary); background: rgba(255,255,255,0.06); }
+.nav-tab svg { width: 20px; height: 20px; }
+.nav-tab span { display: inline; }
+.nav-tab.active { color: var(--fg-primary); background: var(--bg-highlight); }
+.nav-tab.active::after { display: none; }
+.nav-tab:hover, .nav-tab.focused { color: var(--fg-primary); background: rgba(255,255,255,0.08); }
 
-/* Nav spacer — push settings to bottom */
-.nav-spacer { flex: 1; }
+/* Settings button — after the pill */
+.nav-spacer { display: none; }
 .nav-settings-btn {
   width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  color: var(--fg-tertiary); margin-bottom: 20px;
+  color: var(--fg-tertiary); margin-left: 16px;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
-.nav-settings-btn:hover, .nav-settings-btn.focused { color: var(--fg-primary); background: rgba(255,255,255,0.06); }
+.nav-settings-btn:hover, .nav-settings-btn.focused { color: var(--fg-primary); background: rgba(255,255,255,0.08); }
+
+/* Nav size variants no longer needed (horizontal pill) */
+.app.nav-medium, .app.nav-large {
+  grid-template-columns: 1fr;
+}
+.app.nav-medium .nav-bar,
+.app.nav-large .nav-bar { width: auto; }
+.app.nav-medium .nav-tab,
+.app.nav-large .nav-tab { width: auto; flex-direction: row; }
 
 /* Quality badge — floating top-right */
 .quality-badge {
@@ -201,13 +205,13 @@ img { display: block; object-fit: cover; }
 }
 .card-row::-webkit-scrollbar { display: none; }
 
-/* Music Card — Spotify style */
+/* Music Card — Spotify style (TV-optimized larger cards) */
 .music-card {
-  flex: 0 0 180px; width: 180px;
+  flex: 0 0 220px; width: 220px;
   border-radius: var(--radius-md); background: var(--bg-card);
-  overflow: hidden; cursor: pointer; outline: none;
-  scroll-snap-align: start; padding: 12px; padding-bottom: 16px;
-  transition: background var(--transition-normal);
+  cursor: pointer; outline: none;
+  scroll-snap-align: start; padding: 14px; padding-bottom: 18px;
+  transition: background var(--transition-normal), box-shadow var(--transition-normal);
 }
 .music-card:hover, .music-card.focused { background: var(--bg-highlight); }
 .music-card-cover {
@@ -237,12 +241,12 @@ img { display: block; object-fit: cover; }
 
 .music-card-info { padding: 0; }
 .music-card-title {
-  font-size: 14px; font-weight: 700; white-space: nowrap;
+  font-size: 15px; font-weight: 700; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; color: var(--fg-primary);
   margin-bottom: 4px;
 }
 .music-card-subtitle {
-  font-size: 12px; color: var(--fg-secondary); line-height: 1.3;
+  font-size: 13px; color: var(--fg-secondary); line-height: 1.3;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -405,11 +409,11 @@ img { display: block; object-fit: cover; }
 @keyframes heartPop { 0%{transform:scale(1)} 25%{transform:scale(1.3)} 50%{transform:scale(0.95)} 100%{transform:scale(1)} }
 .heart-animate { animation: heartPop 350ms ease; }
 
-/* ========== Full-Screen Player — Immersive ========== */
+/* ========== Full-Screen Player — Spotify TV Immersive Dark ========== */
 .full-player {
   position: fixed; inset: 0; z-index: 500;
-  background: var(--bg-primary);
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
   animation: fpIn 350ms cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 .full-player.hidden { display: none !important; }
@@ -420,64 +424,75 @@ img { display: block; object-fit: cover; }
 .full-player-bg {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
-  filter: blur(120px) brightness(0.2) saturate(1.6);
-  transform: scale(1.3);
-  transition: background-image 800ms ease;
+  filter: blur(140px) brightness(0.15) saturate(1.8);
+  transform: scale(1.5);
+  transition: background-image 1s ease;
 }
 
 .full-player-content {
   position: relative; z-index: 1; width: 100%; height: 100%;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 60px 0 48px;
+  display: flex; flex-direction: row; align-items: center;
+  justify-content: center; padding: 60px 120px;
+  gap: 100px;
 }
 
 /* Chevron down to close */
 .full-player-close {
-  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-  width: 48px; height: 32px; border-radius: var(--radius-md);
+  position: absolute; top: 28px; left: 50%; transform: translateX(-50%);
+  width: 56px; height: 36px; border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
-  color: var(--fg-tertiary);
+  color: rgba(255,255,255,0.3);
   transition: color var(--transition-fast), background var(--transition-fast);
 }
 .full-player-close:hover, .full-player-close.focused { color: var(--fg-primary); background: rgba(255,255,255,0.08); }
 
-/* Large album art */
+/* Large album art — left side, immersive */
 .full-player-art-wrap {
-  width: 360px; height: 360px; border-radius: var(--radius-lg); overflow: hidden;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-  margin-bottom: 36px;
+  width: 520px; height: 520px; border-radius: 16px; overflow: hidden;
+  box-shadow: 0 32px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  flex-shrink: 0;
   animation: artPop 500ms cubic-bezier(0.2, 0, 0, 1) 80ms both;
 }
 @keyframes artPop { from{transform:scale(0.92);opacity:0} to{transform:scale(1);opacity:1} }
 .full-player-cover { width: 100%; height: 100%; object-fit: cover; background: var(--bg-elevated); }
 
+/* Right side: info + progress + controls stacked */
+.full-player-right {
+  display: flex; flex-direction: column; justify-content: center;
+  flex: 1; max-width: 600px; min-width: 0;
+}
+
 /* Song info */
 .full-player-info {
-  text-align: center; margin-bottom: 28px; width: 100%; max-width: 480px; padding: 0 24px;
+  text-align: left; margin-bottom: 40px; width: 100%; padding: 0;
 }
 .full-player-title {
-  font-size: 22px; font-weight: 700; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.3px;
+  font-size: 36px; font-weight: 800; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.5px;
+  line-height: 1.2;
 }
-.full-player-artist { font-size: 15px; color: var(--fg-secondary); margin-top: 4px; }
+.full-player-artist {
+  font-size: 20px; color: var(--fg-secondary); margin-top: 10px;
+  font-weight: 400;
+}
 
 /* Full player progress */
-.full-player-progress-section { width: 100%; max-width: 480px; padding: 0 24px; margin-bottom: 16px; }
+.full-player-progress-section { width: 100%; padding: 0; margin-bottom: 24px; }
 .full-player-progress-bar {
-  width: 100%; height: 20px; display: flex; align-items: center;
+  width: 100%; height: 24px; display: flex; align-items: center;
   cursor: pointer; outline: none;
 }
 .full-player-progress-bg {
-  width: 100%; height: 4px; background: rgba(255,255,255,0.2);
-  border-radius: 2px; position: relative; overflow: visible;
+  width: 100%; height: 5px; background: rgba(255,255,255,0.15);
+  border-radius: 3px; position: relative; overflow: visible;
 }
 .full-player-progress-fill {
   position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
-  background: var(--fg-primary); border-radius: 2px; transition: width 200ms linear;
+  background: var(--fg-primary); border-radius: 3px; transition: width 200ms linear;
 }
 .full-player-progress-bar:hover .full-player-progress-fill { background: var(--sp-green); }
 .full-player-progress-thumb {
-  position: absolute; top: 50%; width: 12px; height: 12px;
+  position: absolute; top: 50%; width: 14px; height: 14px;
   border-radius: 50%; background: var(--fg-primary);
   transform: translate(-50%, -50%) scale(0);
   transition: transform var(--transition-fast);
@@ -487,33 +502,33 @@ img { display: block; object-fit: cover; }
 .full-player-progress-bar.focused .full-player-progress-thumb,
 .full-player-progress-bar.dragging .full-player-progress-thumb { transform: translate(-50%, -50%) scale(1); }
 
-.full-player-times { display: flex; justify-content: space-between; margin-top: 4px; }
-.full-player-time { font-size: 12px; color: var(--fg-secondary); font-variant-numeric: tabular-nums; }
+.full-player-times { display: flex; justify-content: space-between; margin-top: 6px; }
+.full-player-time { font-size: 13px; color: rgba(255,255,255,0.5); font-variant-numeric: tabular-nums; }
 
 /* Full player controls */
 .full-player-controls {
-  display: flex; align-items: center; justify-content: center; gap: 28px; margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: flex-start; gap: 32px; margin-bottom: 36px;
 }
 .full-player-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 48px; height: 48px; border-radius: 50%; color: var(--fg-secondary);
+  width: 52px; height: 52px; border-radius: 50%; color: rgba(255,255,255,0.6);
   transition: color var(--transition-fast), transform var(--transition-fast);
 }
-.full-player-btn:hover, .full-player-btn.focused { color: var(--fg-primary); transform: scale(1.08); }
+.full-player-btn:hover, .full-player-btn.focused { color: var(--fg-primary); transform: scale(1.1); }
 .full-player-btn.active { color: var(--sp-green); }
 .full-player-btn-play {
-  width: 64px; height: 64px; background: var(--fg-primary); color: #000 !important;
+  width: 72px; height: 72px; background: var(--fg-primary); color: #000 !important;
 }
 .full-player-btn-play:hover, .full-player-btn-play.focused {
   background: var(--sp-green-light); transform: scale(1.06);
 }
 
 /* Full player action row */
-.full-player-actions { display: flex; gap: 40px; align-items: center; }
+.full-player-actions { display: flex; gap: 36px; align-items: center; justify-content: flex-start; }
 .full-player-action-btn {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0; font-size: 13px; font-weight: 500;
-  color: var(--fg-tertiary); background: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0; font-size: 14px; font-weight: 500;
+  color: rgba(255,255,255,0.4); background: none;
   transition: color var(--transition-fast), transform var(--transition-fast);
 }
 .full-player-action-btn:hover, .full-player-action-btn.focused {
@@ -684,6 +699,11 @@ img { display: block; object-fit: cover; }
 /* ========== Focus & Accessibility ========== */
 .focusable { outline: none; }
 .focusable.focused { box-shadow: 0 0 0 2px var(--sp-green), 0 0 0 4px rgba(29,185,84,0.15); }
+/* No green ring on search input — subtle bg change instead */
+.search-input.focused { box-shadow: none; }
+.search-input-wrap:has(.search-input.focused),
+.search-input.focused ~ .search-icon { }
+.search-input.focused { background: none; }
 
 /* ========== Skeleton ========== */
 .skeleton {
@@ -691,7 +711,7 @@ img { display: block; object-fit: cover; }
   background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-md);
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-.skeleton-card { flex: 0 0 180px; width: 180px; height: 260px; scroll-snap-align: start; padding: 12px; }
+.skeleton-card { flex: 0 0 220px; width: 220px; height: 300px; scroll-snap-align: start; padding: 14px; }
 
 /* ========== Scrollbar / List Container ========== */
 .list-container { max-height: 400px; overflow-y: auto; scrollbar-width: none; }
@@ -705,5 +725,5 @@ img { display: block; object-fit: cover; }
 
 /* ========== Legacy compat ========== */
 .full-player-queue-section { display: none; }
-.splash-title { display: none; }
+
 .app-title { display: none; }

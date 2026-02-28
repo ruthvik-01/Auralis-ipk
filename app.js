@@ -6,16 +6,15 @@
   'use strict';
 
   /* ========== Constants ========== */
-  var SPLASH_DURATION = 2200;
   var SEARCH_DEBOUNCE = 200;
   var PLAYLISTS_KEY   = 'echo_playlists';
   var LIKED_KEY       = 'echo_liked';
   var THEME_KEY       = 'echo_theme';
+  var SIDEBAR_KEY     = 'echo_sidebar_size';
 
   /* ========== DOM Refs ========== */
   var $  = function (id) { return document.getElementById(id); };
   var el = {
-    splash:           $('splash-screen'),
     app:              $('app'),
     /* Top bar */
     qualityBadge:     $('quality-badge'),
@@ -28,7 +27,10 @@
     trendingRow:      $('trending-row'),
     newReleasesRow:   $('new-releases-row'),
     topAlbumsRow:     $('top-albums-row'),
-    featuredRow:      $('featured-row'),
+    homeRecentRow:    $('home-recent-row'),
+    homeRecentSection: $('home-recent-section'),
+    homePlaylistsRow: $('home-playlists-row'),
+    homePlaylistsSection: $('home-playlists-section'),
     /* Search */
     searchInput:      $('search-input'),
     searchClear:      $('search-clear'),
@@ -223,6 +225,26 @@
     try { localStorage.setItem(THEME_KEY, name); } catch (e) {}
   }
 
+  /* ========== Sidebar Size Manager ========== */
+  function loadSidebarSize() {
+    try {
+      var size = localStorage.getItem(SIDEBAR_KEY) || 'small';
+      applySidebarSize(size);
+    } catch (e) {}
+  }
+
+  function applySidebarSize(size) {
+    el.app.classList.remove('nav-medium', 'nav-large');
+    if (size === 'medium') el.app.classList.add('nav-medium');
+    else if (size === 'large') el.app.classList.add('nav-large');
+    /* Update active state in settings */
+    var opts = document.querySelectorAll('#sidebar-size-options .quality-option');
+    opts.forEach(function (o) {
+      o.classList.toggle('active', o.getAttribute('data-sidebar') === size);
+    });
+    try { localStorage.setItem(SIDEBAR_KEY, size); } catch (e) {}
+  }
+
   /* ========== Quality Badge ========== */
   function updateQualityBadge(quality) {
     if (!quality) { el.qualityBadge.classList.add('hidden'); return; }
@@ -355,14 +377,10 @@
 
     card.addEventListener('click', function () {
       var tracks = PlaylistManager.getTracks(playlist.id);
-      if (tracks.length > 0) {
-        /* Ensure tracks have source property */
-        tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
-        window.EchoPlayback.setQueue(tracks, 0);
-        toast('Playing ' + playlist.name);
-      } else {
-        toast('Playlist is empty');
-      }
+      if (tracks.length === 0) { toast('Playlist is empty'); return; }
+      tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
+      window.EchoPlayback.setQueue(tracks, 0);
+      toast('Playing ' + stripHtml(playlist.name));
     });
 
     return card;
@@ -377,12 +395,41 @@
   }
 
   /* ========== Feed Loading ========== */
+  function refreshHomePersonal() {
+    /* Recently played on Home */
+    var recent = window.EchoPlayback.getRecentlyPlayed();
+    el.homeRecentRow.innerHTML = '';
+    if (recent && recent.length > 0) {
+      el.homeRecentSection.classList.remove('hidden');
+      recent.slice(0, 12).forEach(function (track) {
+        el.homeRecentRow.appendChild(createMusicCard(track));
+      });
+    } else {
+      el.homeRecentSection.classList.add('hidden');
+    }
+
+    /* User playlists on Home */
+    var playlists = PlaylistManager.getAll();
+    el.homePlaylistsRow.innerHTML = '';
+    if (playlists.length > 0) {
+      el.homePlaylistsSection.classList.remove('hidden');
+      playlists.forEach(function (pl) {
+        el.homePlaylistsRow.appendChild(createPlaylistCard(pl));
+      });
+    } else {
+      el.homePlaylistsSection.classList.add('hidden');
+    }
+  }
+
   function loadHomeFeed() {
     /* Show skeletons */
-    [el.trendingRow, el.newReleasesRow, el.topAlbumsRow, el.featuredRow].forEach(function (row) {
+    [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
       row.innerHTML = '';
       row.appendChild(createSkeletonCards(8));
     });
+
+    /* Show personal sections immediately */
+    refreshHomePersonal();
 
     window.SaavnSource.getFeed().then(function (sections) {
       var rowMap = {
@@ -390,36 +437,40 @@
         'New Releases': el.newReleasesRow,
         'Top Albums': el.topAlbumsRow,
         'Top Playlists': el.topAlbumsRow,
-        'Featured Playlists': el.featuredRow,
-        'Charts': el.trendingRow,
-        'Editor Picks': el.featuredRow
+        'Charts': el.trendingRow
       };
 
       /* Clear rows */
-      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow, el.featuredRow].forEach(function (row) {
+      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
         row.innerHTML = '';
       });
 
       sections.forEach(function (section) {
+        /* Skip any playlist sections from Saavn */
+        var titleLower = (section.title || '').toLowerCase();
+        if (titleLower.indexOf('playlist') !== -1 || titleLower.indexOf('editor') !== -1) return;
+
         var row = rowMap[section.title];
         if (!row) {
           /* Put in first empty row */
           if (!el.trendingRow.children.length) row = el.trendingRow;
           else if (!el.newReleasesRow.children.length) row = el.newReleasesRow;
-          else if (!el.topAlbumsRow.children.length) row = el.topAlbumsRow;
-          else row = el.featuredRow;
+          else row = el.topAlbumsRow;
         }
         (section.items || []).forEach(function (item) {
+          /* Skip playlist-type items */
+          if (item.type === 'playlist') return;
           row.appendChild(createMusicCard(item));
         });
       });
 
       feedLoaded = true;
+      refreshHomePersonal();
       if (window.DpadNav) window.DpadNav.refresh();
       console.log('[App] Feed loaded:', sections.length, 'sections');
     }).catch(function (err) {
       console.error('[App] Feed load failed:', err);
-      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow, el.featuredRow].forEach(function (row) {
+      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
         row.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">Failed to load — check connection</p>';
       });
     });
@@ -664,7 +715,7 @@
       var item = document.createElement('div');
       item.className = 'queue-item focusable' + (i === state.currentIndex ? ' queue-item-active' : '');
       item.tabIndex = 0;
-      var art = track.image || track.artwork || '';
+      var art = track.image || track.artwork || track.cover || '';
       var dur = track.duration ? formatTime(track.duration) : '';
       item.innerHTML =
         '<span class="queue-item-index">' + (i + 1) + '</span>' +
@@ -690,7 +741,10 @@
   /* ========== Overlay helpers ========== */
   function openOverlay(overlayEl) {
     overlayEl.classList.remove('hidden');
-    if (window.DpadNav) window.DpadNav.refresh();
+    /* Wait a frame so DOM settles before refreshing D-pad focus */
+    requestAnimationFrame(function () {
+      if (window.DpadNav) window.DpadNav.refresh();
+    });
   }
 
   function closeOverlay(overlayEl) {
@@ -776,12 +830,19 @@
         applyTheme(themeBtn.getAttribute('data-theme'));
         return;
       }
-      var qualityBtn = e.target.closest('.quality-option');
+      var qualityBtn = e.target.closest('#quality-options .quality-option');
       if (qualityBtn) {
         var q = qualityBtn.getAttribute('data-quality');
         window.EchoPlayback.setQuality(q);
         syncQualityOptionUI();
         toast('Quality set to ' + q);
+        return;
+      }
+      var sidebarBtn = e.target.closest('#sidebar-size-options .quality-option');
+      if (sidebarBtn) {
+        var sz = sidebarBtn.getAttribute('data-sidebar');
+        applySidebarSize(sz);
+        toast('Sidebar: ' + sz);
         return;
       }
       if (e.target.closest('[data-action="close-settings"]')) {
@@ -856,7 +917,9 @@
 
     /* -- Player bar right controls -- */
     var barQueueBtn = document.getElementById('btn-queue');
-    if (barQueueBtn) barQueueBtn.addEventListener('click', function () { openQueueOverlay(); });
+    if (barQueueBtn) barQueueBtn.addEventListener('click', function () {
+      openQueueOverlay();
+    });
     var barAddBtn = document.getElementById('btn-add-to-playlist');
     if (barAddBtn) barAddBtn.addEventListener('click', function () {
       var track = window.EchoPlayback.getCurrentTrack();
@@ -907,6 +970,7 @@
     });
     window.EchoPlayback.on('recentupdate', function () {
       if (activeTab === 'library') refreshLibrary();
+      if (activeTab === 'home') refreshHomePersonal();
     });
 
     /* -- D-Pad back handler -- */
@@ -925,6 +989,8 @@
         } else if (activeTab !== 'home') {
           switchTab('home');
         }
+        /* If already on home with no overlays, do nothing — just consume the event
+           to prevent webOS from exiting the app. */
       });
     }
   }
@@ -935,6 +1001,7 @@
 
     /* Load saved theme */
     loadTheme();
+    loadSidebarSize();
 
     /* Init EAPK bridge */
     window.EchoEapk.init().then(function (modules) {
@@ -949,23 +1016,12 @@
     /* Init quality UI */
     syncQualityOptionUI();
 
-    /* Splash → App transition */
-    setTimeout(function () {
-      el.splash.classList.add('fade-out');
-      el.app.classList.remove('hidden');
+    /* Load home feed */
+    loadHomeFeed();
 
-      setTimeout(function () {
-        el.splash.style.display = 'none';
-
-        /* Load home feed */
-        loadHomeFeed();
-
-        /* Init navigation */
-        if (window.DpadNav) window.DpadNav.init();
-        if (window.PointerNav) window.PointerNav.init();
-
-      }, 600);
-    }, SPLASH_DURATION);
+    /* Init navigation */
+    if (window.DpadNav) window.DpadNav.init();
+    if (window.PointerNav) window.PointerNav.init();
   }
 
   /* Start when DOM ready */

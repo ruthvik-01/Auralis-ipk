@@ -1,6 +1,6 @@
 {
   "id": "com.echo.tv",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "vendor": "Echo",
   "type": "web",
   "main": "index.html",
@@ -8,9 +8,9 @@
   "icon": "icon.png",
   "largeIcon": "icon.png",
   "resolution": "1920x1080",
-  "transparent": false,
+  "transparent": true,
   "handlesRelaunch": false,
-  "disableBackHistoryAPI": false,
+  "disableBackHistoryAPI": true,
   "allowCrossDomain": true,
   "enableKeyboard": true,
   "requiredPermissions": [

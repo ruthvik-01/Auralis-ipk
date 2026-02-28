@@ -15,6 +15,9 @@
     DOWN: 40,
     OK: 13,
     BACK: 461,    // LG webOS back button
+    BACK_ALT: 10009, // Tizen / some webOS back
+    BACKSPACE: 8,
+    ESCAPE: 27,
     RED: 403,
     GREEN: 404,
     YELLOW: 405,
@@ -77,10 +80,23 @@
     if (!contentArea) return;
     var rect = el.getBoundingClientRect();
     var containerRect = contentArea.getBoundingClientRect();
+
+    /* Vertical scroll within #content-area */
     if (rect.bottom > containerRect.bottom) {
       contentArea.scrollTop += rect.bottom - containerRect.bottom + 40;
     } else if (rect.top < containerRect.top) {
       contentArea.scrollTop -= containerRect.top - rect.top + 40;
+    }
+
+    /* Horizontal scroll within .card-row */
+    var cardRow = el.closest('.card-row');
+    if (cardRow) {
+      var rowRect = cardRow.getBoundingClientRect();
+      if (rect.right > rowRect.right) {
+        cardRow.scrollLeft += rect.right - rowRect.right + 60;
+      } else if (rect.left < rowRect.left) {
+        cardRow.scrollLeft -= rowRect.left - rect.left + 60;
+      }
     }
   }
 
@@ -168,7 +184,11 @@
         }
         break;
       case KEYS.BACK:
+      case KEYS.BACK_ALT:
+      case KEYS.BACKSPACE:
+      case KEYS.ESCAPE:
         e.preventDefault();
+        e.stopPropagation();
         if (typeof onBackCallback === 'function') {
           onBackCallback();
         }
