@@ -1,4 +1,4 @@
-# Echo Player — LG webOS TV App
+# Auralis — LG webOS TV App
 
 A production-ready LG webOS TV music streaming app that integrates with existing eapk-backed Saavn and YouTube Music modules.
 
