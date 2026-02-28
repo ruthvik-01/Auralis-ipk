@@ -599,8 +599,8 @@
         el.searchResults.innerHTML = '<p class="search-placeholder">No results found</p>';
         return;
       }
-      results.forEach(function (track) {
-        el.searchResults.appendChild(createSongItem(track));
+      results.forEach(function (track, idx) {
+        el.searchResults.appendChild(createSongItem(track, { queue: results, queueIndex: idx }));
       });
       if (window.DpadNav) window.DpadNav.refresh();
     }).catch(function (err) {

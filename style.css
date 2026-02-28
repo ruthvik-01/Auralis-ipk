@@ -288,7 +288,7 @@ img { display: block; object-fit: cover; }
 .song-item-action-btn.focused { color: var(--fg-primary); background: rgba(255,255,255,0.1); }
 
 /* ========== Search — Flat minimal rounded bar ========== */
-.search-container { max-width: 600px; }
+.search-container { max-width: 800px; margin: 0 auto; }
 .search-input-wrap {
   display: flex; align-items: center; gap: 12px;
   background: var(--bg-highlight); border-radius: var(--radius-full);
@@ -308,7 +308,7 @@ img { display: block; object-fit: cover; }
   transition: color var(--transition-fast);
 }
 .search-clear-btn:hover { color: var(--fg-primary); }
-.search-results { margin-top: 24px; }
+.search-results { margin-top: 24px; max-width: 800px; margin-left: auto; margin-right: auto; }
 .search-placeholder { color: var(--fg-tertiary); font-size: 15px; text-align: center; margin-top: 80px; }
 
 /* ========== Player Bar — Spotify bottom bar ========== */
