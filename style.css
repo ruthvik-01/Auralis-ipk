@@ -649,23 +649,20 @@ img { display: block; object-fit: cover; }
 .add-playlist-item-name { font-size: 15px; font-weight: 500; flex: 1; }
 .add-playlist-item-count { font-size: 13px; color: var(--fg-tertiary); }
 
-/* Playlist card more button */
+/* Playlist card more button — always visible on playlist cards */
 .music-card { position: relative; }
 .pl-card-more {
-  position: absolute; top: 6px; right: 6px; z-index: 5;
-  width: 32px; height: 32px;
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
-  background: rgba(0,0,0,0.55);
-  color: var(--fg-secondary);
-  opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  background: rgba(0,0,0,0.65);
+  color: rgba(255,255,255,0.7);
+  opacity: 1;
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
-.music-card:hover .pl-card-more,
-.music-card.focused .pl-card-more,
-.pl-card-more:focus { opacity: 1; }
 .pl-card-more:hover, .pl-card-more.focused {
-  background: rgba(0,0,0,0.8); color: var(--fg-primary);
+  background: rgba(0,0,0,0.85); color: var(--fg-primary); transform: scale(1.1);
 }
 
 /* Delete confirmation */

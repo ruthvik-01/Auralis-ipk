@@ -379,7 +379,13 @@
         }
         return;
       }
-      onCardClick(track);
+      /* If a queue context was provided, play as queue from this index */
+      if (opts.queue && opts.queue.length > 0 && typeof opts.queueIndex === 'number') {
+        var q = opts.queue.map(function (t) { t.source = t.source || 'saavn'; return t; });
+        window.EchoPlayback.setQueue(q, opts.queueIndex);
+      } else {
+        onCardClick(track);
+      }
     });
 
     return item;
@@ -417,17 +423,46 @@
         '<div class="music-card-subtitle">' + count + ' song' + (count !== 1 ? 's' : '') + '</div>' +
       '</div>' +
       '<button class="pl-card-more focusable" aria-label="More options">' +
-        '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>' +
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>' +
       '</button>';
 
-    /* 3-dot opens playlist context menu */
+    /* 3-dot opens playlist context menu (click or Magic Remote) */
     var moreBtn = card.querySelector('.pl-card-more');
     moreBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      openPlaylistContextMenu(playlist.id, playlist.name, moreBtn);
+      openPlaylistContextMenu(playlist.id, playlist.name, card);
     });
 
-    card.addEventListener('click', function () {
+    /* Long-press Enter/OK on D-pad opens context menu */
+    var longPressTimer = null;
+    var longPressed = false;
+    card.addEventListener('keydown', function (e) {
+      if (e.keyCode === 13 && !longPressTimer) {
+        longPressed = false;
+        longPressTimer = setTimeout(function () {
+          longPressed = true;
+          openPlaylistContextMenu(playlist.id, playlist.name, card);
+        }, 600);
+      }
+    });
+    card.addEventListener('keyup', function (e) {
+      if (e.keyCode === 13) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+        if (!longPressed) {
+          /* Short press — play playlist */
+          var tracks = PlaylistManager.getTracks(playlist.id);
+          if (tracks.length === 0) { toast('Playlist is empty'); return; }
+          tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
+          window.EchoPlayback.setQueue(tracks, 0);
+          toast('Playing ' + stripHtml(playlist.name));
+        }
+      }
+    });
+
+    card.addEventListener('click', function (e) {
+      /* Ignore if long-press was triggered or if it came from the more button */
+      if (longPressed) { longPressed = false; return; }
       var tracks = PlaylistManager.getTracks(playlist.id);
       if (tracks.length === 0) { toast('Playlist is empty'); return; }
       tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
@@ -603,8 +638,8 @@
     el.likedSongsList.innerHTML = '';
     el.likedCount.textContent = liked.length > 0 ? liked.length + ' song' + (liked.length > 1 ? 's' : '') : '';
     if (liked.length > 0) {
-      liked.forEach(function (track) {
-        el.likedSongsList.appendChild(createSongItem(track));
+      liked.forEach(function (track, idx) {
+        el.likedSongsList.appendChild(createSongItem(track, { queue: liked, queueIndex: idx }));
       });
     } else {
       el.likedSongsList.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">No liked songs yet</p>';
@@ -901,11 +936,14 @@
     var rect = anchorEl.getBoundingClientRect();
     var menu = el.plCtxMenu;
     menu.classList.remove('hidden');
-    var menuW = 220, menuH = 100;
-    var left = rect.right + 8;
-    if (left + menuW > window.innerWidth - 10) left = rect.left - menuW - 8;
-    var top = rect.top;
+    /* Position near the card — prefer right side, fallback left */
+    var menuW = 240, menuH = 110;
+    var left = rect.right + 12;
+    if (left + menuW > window.innerWidth - 20) left = rect.left - menuW - 12;
+    if (left < 10) left = 10;
+    var top = rect.top + (rect.height / 2) - (menuH / 2);
     if (top + menuH > window.innerHeight - 20) top = window.innerHeight - menuH - 20;
+    if (top < 20) top = 20;
     menu.style.left = left + 'px';
     menu.style.top = top + 'px';
     if (window.DpadNav) window.DpadNav.refresh();
