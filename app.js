@@ -615,6 +615,10 @@
 
   /* ========== Playlist Detail View ========== */
   function openPlaylistDetail(playlistId) {
+    /* If not already on the library tab, switch to it first */
+    if (activeTab !== 'library') {
+      switchTab('library');
+    }
     currentDetailPlaylistId = playlistId;
     el.libraryMainView.classList.add('hidden');
     el.plDetailView.classList.remove('hidden');
