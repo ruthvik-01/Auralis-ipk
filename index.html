@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Echo Player</title>
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ===== Splash Screen ===== -->
+    <div id="splash-screen" class="splash">
+      <div class="splash-logo">
+        <img
+          src="icon.png"
+          width="160"
+          height="160"
+          alt="Echo"
+          style="
+            border-radius: 32px;
+            image-rendering: -webkit-optimize-contrast;
+          "
+        />
+      </div>
+    </div>
+
+    <!-- ===== Main App Container ===== -->
+    <div id="app" class="app hidden">
+      <!-- Quality Badge (floating) -->
+      <div id="quality-badge" class="quality-badge hidden">
+        <span id="quality-label">HD</span>
+      </div>
+
+      <!-- Navigation Rail -->
+      <nav id="nav-bar" class="nav-bar">
+        <button
+          class="focusable nav-tab active"
+          data-tab="home"
+          aria-label="Home"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="focusable nav-tab" data-tab="search" aria-label="Search">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+            />
+          </svg>
+          <span>Search</span>
+        </button>
+        <button
+          class="focusable nav-tab"
+          data-tab="library"
+          aria-label="Library"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
+          </svg>
+          <span>Library</span>
+        </button>
+        <div class="nav-spacer"></div>
+        <button class="focusable nav-settings-btn" data-action="settings" aria-label="Settings">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/>
+          </svg>
+        </button>
+      </nav>
+
+      <!-- Content Area -->
+      <main id="content-area" class="content-area">
+        <!-- HOME TAB -->
+        <section id="tab-home" class="tab-panel active">
+          <div class="content-section">
+            <h2 class="section-title">Trending Now</h2>
+            <div class="card-row" id="trending-row"></div>
+          </div>
+          <div class="content-section">
+            <h2 class="section-title">New Releases</h2>
+            <div class="card-row" id="new-releases-row"></div>
+          </div>
+          <div class="content-section">
+            <h2 class="section-title">Top Albums</h2>
+            <div class="card-row" id="top-albums-row"></div>
+          </div>
+          <div class="content-section">
+            <h2 class="section-title">Featured Playlists</h2>
+            <div class="card-row" id="featured-row"></div>
+          </div>
+        </section>
+
+        <!-- SEARCH TAB -->
+        <section id="tab-search" class="tab-panel">
+          <div class="search-container">
+            <div class="search-input-wrap">
+              <svg
+                class="search-icon"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                />
+              </svg>
+              <input
+                id="search-input"
+                class="focusable search-input"
+                type="text"
+                placeholder="Search songs, artists, albums..."
+                autocomplete="off"
+              />
+              <button
+                id="search-clear"
+                class="search-clear-btn hidden"
+                aria-label="Clear"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div id="search-results" class="search-results">
+              <p class="search-placeholder">Search for your favorite music</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIBRARY TAB -->
+        <section id="tab-library" class="tab-panel">
+          <div class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Recently Played</h2>
+            </div>
+            <div class="card-row" id="recent-row"></div>
+          </div>
+          <div class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Your Playlists</h2>
+              <button
+                class="focusable section-action-btn"
+                id="btn-create-playlist"
+                aria-label="Create Playlist"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+                <span>New</span>
+              </button>
+            </div>
+            <div class="card-row" id="playlists-row"></div>
+          </div>
+          <div class="content-section">
+            <div class="section-header">
+              <h2 class="section-title">Liked Songs</h2>
+              <span id="liked-count" class="section-count"></span>
+            </div>
+            <div class="list-container" id="liked-songs-list"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Bottom Player Bar -->
+      <div id="player-bar" class="player-bar">
+        <div class="player-bar-inner">
+          <div
+            class="player-track-info focusable"
+            id="player-track-info"
+            tabindex="0"
+            role="button"
+            aria-label="Open full player"
+          >
+            <div class="player-cover-wrap">
+              <img id="player-cover" class="player-cover" src="" alt="" />
+              <div class="player-cover-placeholder">
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="rgba(255,255,255,0.4)"
+                >
+                  <path
+                    d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div class="player-text">
+              <div id="player-title" class="player-title">No track playing</div>
+              <div id="player-artist" class="player-artist">&mdash;</div>
+            </div>
+          </div>
+          <div class="player-progress-section">
+            <div class="player-controls-row">
+              <button class="focusable player-btn" id="btn-shuffle" aria-label="Shuffle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+              </button>
+              <button class="focusable player-btn" id="btn-prev" aria-label="Previous">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+              </button>
+              <button class="focusable player-btn player-btn-play" id="btn-play" aria-label="Play">
+                <svg id="icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </button>
+              <button class="focusable player-btn" id="btn-next" aria-label="Next">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+              </button>
+              <button class="focusable player-btn" id="btn-repeat" aria-label="Repeat">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+              </button>
+            </div>
+            <div class="player-progress-row">
+              <span id="player-time-current" class="player-time">0:00</span>
+              <div class="player-progress-bar focusable" id="player-progress-bar" tabindex="0" aria-label="Seek">
+                <div class="player-progress-bg">
+                  <div id="player-progress-fill" class="player-progress-fill"></div>
+                  <div id="player-progress-thumb" class="player-progress-thumb"></div>
+                </div>
+              </div>
+              <span id="player-time-total" class="player-time">0:00</span>
+            </div>
+          </div>
+          <div class="player-controls player-right-controls">
+            <button class="focusable player-btn" id="btn-like" aria-label="Like">
+              <svg id="icon-heart-outline" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+              </svg>
+              <svg id="icon-heart-filled" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden heart-pop">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </button>
+            <button class="focusable player-btn" id="btn-queue" data-action="queue" aria-label="Queue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/>
+              </svg>
+            </button>
+            <button class="focusable player-btn" id="btn-add-to-playlist" data-action="add-to-playlist" aria-label="Add to playlist">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Screen Player -->
+      <div id="full-player" class="full-player hidden">
+        <div id="full-player-bg" class="full-player-bg"></div>
+        <div class="full-player-content">
+          <button
+            class="focusable full-player-close"
+            id="full-player-close"
+            aria-label="Close"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+            </svg>
+          </button>
+          <div class="full-player-art-wrap">
+            <img
+              id="full-player-cover"
+              class="full-player-cover"
+              src=""
+              alt=""
+            />
+          </div>
+          <div class="full-player-info">
+            <div id="full-player-title" class="full-player-title">
+              No track playing
+            </div>
+            <div id="full-player-artist" class="full-player-artist">
+              &mdash;
+            </div>
+          </div>
+          <div class="full-player-progress-section">
+            <div
+              class="full-player-progress-bar focusable"
+              id="full-player-progress-bar"
+              tabindex="0"
+              aria-label="Seek"
+            >
+              <div class="full-player-progress-bg">
+                <div
+                  id="full-player-progress-fill"
+                  class="full-player-progress-fill"
+                ></div>
+                <div
+                  id="full-player-progress-thumb"
+                  class="full-player-progress-thumb"
+                ></div>
+              </div>
+            </div>
+            <div class="full-player-times">
+              <span id="full-player-time-current" class="full-player-time"
+                >0:00</span
+              >
+              <span id="full-player-time-total" class="full-player-time"
+                >0:00</span
+              >
+            </div>
+          </div>
+          <div class="full-player-controls">
+            <button
+              class="focusable full-player-btn"
+              id="full-btn-shuffle"
+              aria-label="Shuffle"
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"
+                />
+              </svg>
+            </button>
+            <button
+              class="focusable full-player-btn"
+              id="full-btn-prev"
+              aria-label="Previous"
+            >
+              <svg
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              </svg>
+            </button>
+            <button
+              class="focusable full-player-btn full-player-btn-play"
+              id="full-btn-play"
+              aria-label="Play"
+            >
+              <svg
+                id="full-icon-play"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <svg
+                id="full-icon-pause"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="hidden"
+              >
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+            </button>
+            <button
+              class="focusable full-player-btn"
+              id="full-btn-next"
+              aria-label="Next"
+            >
+              <svg
+                width="36"
+                height="36"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+              </svg>
+            </button>
+            <button
+              class="focusable full-player-btn"
+              id="full-btn-repeat"
+              aria-label="Repeat"
+            >
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="full-player-actions">
+            <button
+              class="focusable full-player-action-btn"
+              id="full-btn-queue"
+              aria-label="Queue"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"
+                />
+              </svg>
+              <span>Queue</span>
+            </button>
+            <button
+              class="focusable full-player-action-btn"
+              id="full-btn-like"
+              aria-label="Like"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"
+                />
+              </svg>
+              <span>Like</span>
+            </button>
+            <button
+              class="focusable full-player-action-btn"
+              id="full-btn-add-playlist"
+              aria-label="Add to Playlist"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z"
+                />
+              </svg>
+              <span>Add to Playlist</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Overlay -->
+      <div id="settings-overlay" class="overlay hidden">
+        <div class="overlay-panel settings-panel">
+          <h2 class="overlay-title">Settings</h2>
+          <div class="settings-group">
+            <h3 class="settings-group-title">Theme</h3>
+            <div class="theme-grid" id="theme-grid">
+              <button
+                class="focusable theme-option active"
+                data-theme="midnight"
+              >
+                <div
+                  class="theme-swatch"
+                  style="background: linear-gradient(135deg, #000, #1a1a2e)"
+                ></div>
+                <span>Midnight</span>
+              </button>
+              <button class="focusable theme-option" data-theme="ocean">
+                <div
+                  class="theme-swatch"
+                  style="background: linear-gradient(135deg, #0a1628, #1a3a5c)"
+                ></div>
+                <span>Ocean</span>
+              </button>
+              <button class="focusable theme-option" data-theme="forest">
+                <div
+                  class="theme-swatch"
+                  style="background: linear-gradient(135deg, #0a1a0a, #1a3a1a)"
+                ></div>
+                <span>Forest</span>
+              </button>
+              <button class="focusable theme-option" data-theme="sunset">
+                <div
+                  class="theme-swatch"
+                  style="background: linear-gradient(135deg, #1a0a1a, #3a1a2a)"
+                ></div>
+                <span>Sunset</span>
+              </button>
+              <button class="focusable theme-option" data-theme="amoled">
+                <div class="theme-swatch" style="background: #000"></div>
+                <span>AMOLED</span>
+              </button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <h3 class="settings-group-title">Audio Quality</h3>
+            <div class="quality-options" id="quality-options">
+              <button class="focusable quality-option" data-quality="low">
+                <span class="quality-opt-label">Low</span
+                ><span class="quality-opt-desc">48 kbps</span>
+              </button>
+              <button class="focusable quality-option" data-quality="medium">
+                <span class="quality-opt-label">Medium</span
+                ><span class="quality-opt-desc">160 kbps</span>
+              </button>
+              <button
+                class="focusable quality-option active"
+                data-quality="high"
+              >
+                <span class="quality-opt-label">High</span
+                ><span class="quality-opt-desc">320 kbps HD</span>
+              </button>
+            </div>
+          </div>
+          <button
+            class="focusable overlay-close-btn"
+            data-action="close-settings"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Create Playlist Overlay -->
+      <div id="playlist-overlay" class="overlay hidden">
+        <div class="overlay-panel playlist-create-panel">
+          <h2 class="overlay-title">Create Playlist</h2>
+          <input
+            id="playlist-name-input"
+            class="focusable playlist-input"
+            type="text"
+            placeholder="Playlist name..."
+            autocomplete="off"
+            maxlength="50"
+          />
+          <div class="playlist-form-actions">
+            <button
+              class="focusable overlay-action-btn"
+              id="btn-playlist-create"
+              disabled
+            >
+              Create
+            </button>
+            <button
+              class="focusable overlay-close-btn"
+              data-action="close-playlist-overlay"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add to Playlist Picker -->
+      <div id="add-to-playlist-overlay" class="overlay hidden">
+        <div class="overlay-panel add-playlist-panel">
+          <h2 class="overlay-title">Add to Playlist</h2>
+          <div id="add-playlist-list" class="add-playlist-list"></div>
+          <button
+            class="focusable overlay-close-btn"
+            data-action="close-add-playlist"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue Bottom Sheet -->
+      <div id="queue-overlay" class="overlay hidden">
+        <div class="overlay-panel queue-panel">
+          <div class="queue-panel-header">
+            <h2 class="overlay-title">Queue</h2>
+            <span id="queue-track-count" class="section-count"></span>
+          </div>
+          <div id="queue-list" class="queue-list list-container"></div>
+          <button class="focusable overlay-close-btn" data-action="close-queue">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/eapk-loader.js"></script>
+    <script src="js/navigation/dpad.js"></script>
+    <script src="js/navigation/pointer.js"></script>
+    <script src="js/player/playback.js"></script>
+    <script src="js/sources/saavn.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

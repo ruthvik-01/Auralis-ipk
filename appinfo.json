@@ -1,0 +1,22 @@
+{
+  "id": "com.echo.tv",
+  "version": "1.0.5",
+  "vendor": "Echo",
+  "type": "web",
+  "main": "index.html",
+  "title": "Echo Player",
+  "icon": "icon.png",
+  "largeIcon": "icon.png",
+  "resolution": "1920x1080",
+  "transparent": false,
+  "handlesRelaunch": false,
+  "disableBackHistoryAPI": false,
+  "allowCrossDomain": true,
+  "enableKeyboard": true,
+  "requiredPermissions": [
+    "all"
+  ],
+  "accessibility": {
+    "supportsAudioGuidance": false
+  }
+}
