@@ -121,6 +121,14 @@
     deleteOverlay:    $('delete-playlist-overlay'),
     deleteNameLabel:  $('delete-playlist-name'),
     btnDeleteConfirm: $('btn-delete-confirm'),
+    /* Playlist detail view */
+    libraryMainView:  $('library-main-view'),
+    plDetailView:     $('playlist-detail-view'),
+    plDetailName:     $('pl-detail-name'),
+    plDetailCount:    $('pl-detail-count'),
+    plDetailTracks:   $('pl-detail-tracks'),
+    plDetailBack:     $('pl-detail-back'),
+    plDetailPlay:     $('pl-detail-play'),
     /* Toast */
     toast:            $('toast'),
     contentArea:      $('content-area')
@@ -139,6 +147,7 @@
   var playlistCtxId = null;    /* playlist id for context menu */
   var playlistCtxName = null;  /* playlist name for context menu */
   var contextMenuIndex = -1;
+  var currentDetailPlaylistId = null; /* playlist detail view */
 
   /* ========== Utility ========== */
   function formatTime(s) {
@@ -429,12 +438,8 @@
         clearTimeout(longPressTimer);
         longPressTimer = null;
         if (!longPressed) {
-          /* Short press — play playlist */
-          var tracks = PlaylistManager.getTracks(playlist.id);
-          if (tracks.length === 0) { toast('Playlist is empty'); return; }
-          tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
-          window.EchoPlayback.setQueue(tracks, 0);
-          toast('Playing ' + stripHtml(playlist.name));
+          /* Short press — open playlist detail */
+          openPlaylistDetail(playlist.id);
         }
       }
     });
@@ -442,11 +447,7 @@
     card.addEventListener('click', function (e) {
       /* Ignore if long-press was triggered or if it came from the more button */
       if (longPressed) { longPressed = false; return; }
-      var tracks = PlaylistManager.getTracks(playlist.id);
-      if (tracks.length === 0) { toast('Playlist is empty'); return; }
-      tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
-      window.EchoPlayback.setQueue(tracks, 0);
-      toast('Playing ' + stripHtml(playlist.name));
+      openPlaylistDetail(playlist.id);
     });
 
     return card;
@@ -524,6 +525,12 @@
   /* ========== Tab Switching ========== */
   function switchTab(tab) {
     activeTab = tab;
+    /* Close playlist detail if open */
+    if (currentDetailPlaylistId) {
+      currentDetailPlaylistId = null;
+      el.plDetailView.classList.add('hidden');
+      el.libraryMainView.classList.remove('hidden');
+    }
     /* Update nav buttons */
     document.querySelectorAll('.nav-tab').forEach(function (btn) {
       btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
@@ -602,6 +609,80 @@
     } else {
       el.likedSongsList.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">No liked songs yet</p>';
     }
+
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  /* ========== Playlist Detail View ========== */
+  function openPlaylistDetail(playlistId) {
+    currentDetailPlaylistId = playlistId;
+    el.libraryMainView.classList.add('hidden');
+    el.plDetailView.classList.remove('hidden');
+    renderPlaylistDetail();
+    el.contentArea.scrollTop = 0;
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function closePlaylistDetail() {
+    currentDetailPlaylistId = null;
+    el.plDetailView.classList.add('hidden');
+    el.libraryMainView.classList.remove('hidden');
+    refreshLibrary();
+    if (window.DpadNav) window.DpadNav.refresh();
+  }
+
+  function renderPlaylistDetail() {
+    if (!currentDetailPlaylistId) return;
+    var playlists = PlaylistManager.getAll();
+    var pl = playlists.find(function (p) { return p.id === currentDetailPlaylistId; });
+    if (!pl) { closePlaylistDetail(); return; }
+
+    var tracks = pl.tracks || [];
+    el.plDetailName.textContent = stripHtml(pl.name);
+    el.plDetailCount.textContent = tracks.length + ' song' + (tracks.length !== 1 ? 's' : '');
+    el.plDetailTracks.innerHTML = '';
+
+    if (tracks.length === 0) {
+      el.plDetailTracks.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">This playlist is empty</p>';
+      return;
+    }
+
+    tracks.forEach(function (track, idx) {
+      var item = document.createElement('div');
+      item.className = 'song-item focusable';
+      item.tabIndex = 0;
+      item.setAttribute('data-id', track.id);
+
+      var cover = track.cover || track.image || '';
+      var dur = track.duration ? formatTime(track.duration) : '';
+
+      item.innerHTML =
+        '<div class="song-item-cover">' + (cover ? '<img src="' + cover + '" alt="" loading="lazy"/>' : '') + '</div>' +
+        '<div class="song-item-text">' +
+          '<div class="song-item-title">' + stripHtml(track.title) + '</div>' +
+          '<div class="song-item-artist">' + stripHtml(track.artist) + '</div>' +
+        '</div>' +
+        (dur ? '<span class="song-item-duration">' + dur + '</span>' : '') +
+        '<button class="pl-song-remove focusable" aria-label="Remove from playlist" data-action="remove-from-pl">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>' +
+        '</button>';
+
+      item.addEventListener('click', function (e) {
+        var removeBtn = e.target.closest('[data-action="remove-from-pl"]');
+        if (removeBtn) {
+          PlaylistManager.removeTrack(currentDetailPlaylistId, track.id);
+          toast('Removed from playlist');
+          renderPlaylistDetail();
+          return;
+        }
+        /* Play the playlist starting from this track */
+        var allTracks = PlaylistManager.getTracks(currentDetailPlaylistId);
+        allTracks = allTracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
+        window.EchoPlayback.setQueue(allTracks, idx);
+      });
+
+      el.plDetailTracks.appendChild(item);
+    });
 
     if (window.DpadNav) window.DpadNav.refresh();
   }
@@ -1250,6 +1331,17 @@
       if (e.keyCode === 13 && !el.btnPlaylistCreate.disabled) doCreatePlaylist();
     });
 
+    /* -- Playlist detail view -- */
+    el.plDetailBack.addEventListener('click', closePlaylistDetail);
+    el.plDetailPlay.addEventListener('click', function () {
+      if (!currentDetailPlaylistId) return;
+      var tracks = PlaylistManager.getTracks(currentDetailPlaylistId);
+      if (tracks.length === 0) { toast('Playlist is empty'); return; }
+      tracks = tracks.map(function (t) { t.source = t.source || 'saavn'; return t; });
+      window.EchoPlayback.setQueue(tracks, 0);
+      toast('Playing playlist');
+    });
+
     /* -- Rename playlist -- */
     el.renameInput.addEventListener('input', function () {
       el.btnRenameSave.disabled = !el.renameInput.value.trim();
@@ -1323,6 +1415,8 @@
           closeQueuePanel();
         } else if (!el.fullPlayer.classList.contains('hidden')) {
           closeFullPlayer();
+        } else if (currentDetailPlaylistId) {
+          closePlaylistDetail();
         } else if (activeTab !== 'home') {
           switchTab('home');
         }
