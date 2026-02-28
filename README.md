@@ -1,6 +1,55 @@
-# Echo Player — LG webOS TV App
+# Auralis — Music Player for LG webOS TV
 
-A production-ready LG webOS TV music streaming app that integrates with existing eapk-backed Saavn and YouTube Music modules.
+<p align="center">
+  <img src="icon.png" alt="Auralis" width="120" height="120" style="border-radius: 24px;" />
+</p>
+
+<p align="center">
+  <strong>A beautiful, Spotify-inspired music streaming app built for LG Smart TVs.</strong><br/>
+  Stream millions of songs via JioSaavn — optimized for D-Pad, Magic Remote, and 4K displays.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.23-1db954?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/platform-webOS%20TV-a855f7?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/resolution-1920×1080-3b82f6?style=flat-square" alt="Resolution" />
+  <img src="https://img.shields.io/badge/quality-320kbps%20HD-f59e0b?style=flat-square" alt="Quality" />
+</p>
+
+---
+
+## Features
+
+### 🎵 Playback
+
+- **High-quality streaming** — 320 kbps audio via JioSaavn
+- **Full queue management** — play next, remove from queue, shuffle, repeat
+- **Immersive full player** — album art background with blur, seekbar, and controls
+- **Queue side panel** — view upcoming tracks and recently played without leaving the player
+
+### 📚 Library
+
+- **Playlists** — create, rename, delete, and browse playlists
+- **Playlist detail view** — view all songs, play from any position, remove individual tracks
+- **Liked songs** — heart any track, plays as a continuous queue
+- **Recently played** — auto-tracked history
+
+### 🔍 Search
+
+- **Real-time search** — debounced input with instant results
+- **Queue-aware results** — clicking a result queues all search results from that position
+
+### 🎮 Navigation
+
+- **D-Pad optimized** — full keyboard/remote navigation with focus management
+- **Magic Remote** — pointer support for LG's motion remote
+- **Long-press actions** — hold Enter/OK on playlist cards to rename or delete
+- **Back button chain** — hierarchical navigation (overlays → detail views → tabs → home)
+
+### 🎨 Personalization
+
+- **5 color themes** — Midnight, Ocean, Forest, Sunset, AMOLED
+- **Persistent storage** — playlists, liked songs, theme, and preferences saved locally
 
 ---
 
@@ -8,244 +57,102 @@ A production-ready LG webOS TV music streaming app that integrates with existing
 
 ```
 echo-tv/
-├── appinfo.json            # webOS app manifest
-├── icon.png                # App icon (80×80 PNG)
-├── icon_source.svg         # Icon source vector
-├── index.html              # Main HTML entry point
-├── style.css               # Full UI stylesheet (1920×1080 scaled)
-├── app.js                  # Main application controller
+├── appinfo.json              # webOS app manifest (com.echo.tv)
+├── icon.png                  # App launcher icon (500×500)
+├── index.html                # Main HTML entry point
+├── style.css                 # Full UI stylesheet (1920×1080)
+├── app.js                    # Main application controller
 └── js/
+    ├── eapk-loader.js        # EAPK bridge module loader
     ├── navigation/
-    │   ├── dpad.js          # D-Pad / standard remote navigation
-    │   └── pointer.js       # Magic Remote pointer navigation
+    │   ├── dpad.js            # D-Pad / remote navigation
+    │   └── pointer.js         # Magic Remote pointer support
     ├── player/
-    │   └── playback.js      # HTML5 Audio playback controller
+    │   └── playback.js        # HTML5 Audio playback engine
     └── sources/
-        ├── saavn.js         # JioSaavn eapk bridge module
-        └── ytmusic.js       # YouTube Music eapk bridge module
+        ├── saavn.js           # JioSaavn API module
+        └── ytmusic.js         # YouTube Music module
 ```
 
 ---
 
-## Architecture
+## Tech Stack
 
-### UI Scaling Layer
-
-The UI is authored at **1920×1080** (native TV resolution). A responsive scaling layer in both CSS and JS detects the actual viewport and applies `transform: scale()` so the layout fills any screen without distortion, maintaining original proportions.
-
-### Navigation System
-
-Two input modes operate cooperatively:
-
-| Input                       | Method                       | Behavior                                              |
-| --------------------------- | ---------------------------- | ----------------------------------------------------- |
-| **D-Pad** (Standard Remote) | Arrow keys (37-40) + OK (13) | Spatial focus navigation across `.focusable` elements |
-| **Magic Remote** (Pointer)  | Mouse hover + click          | Hover applies focus class; click triggers action      |
-
-When a key is pressed, pointer mode deactivates. When the pointer moves, D-pad focus clears. No conflicts.
-
-### Source Modules
-
-`saavn.js` and `ytmusic.js` are **bridge modules** — they do NOT contain API logic. They call into the existing **eapk-backed extension system** via `window.EchoEapk.call()`:
-
-```js
-window.EchoEapk.call(
-  "dev.brahmkshatriya.echo.extension.saavn",
-  "getStreamUrl",
-  { id: trackId },
-);
-```
-
-Each module normalizes responses into a common track format and exposes:
-
-- `search(query, type)` → `Promise<Track[]>`
-- `getFeed(section)` → `Promise<Track[]>`
-- `getStreamUrl(trackId)` → `Promise<string>`
-- `getDetails(id, type)` → `Promise<Object>`
-- `getRecent()` → `Promise<Track[]>`
-
-### Playback
-
-HTML5 `<audio>` element with full lifecycle management:
-
-```js
-audio.src = STREAM_URL;
-audio.play();
-```
-
-Supports: Play, Pause, Next, Previous, Shuffle, Repeat (None/All/One), Seek, Queue management, Media Session API.
+| Layer        | Technology                      |
+| ------------ | ------------------------------- |
+| Platform     | LG webOS TV (web app)           |
+| UI           | Vanilla HTML / CSS / JavaScript |
+| Font         | Montserrat (Google Fonts)       |
+| Audio        | HTML5 Audio API                 |
+| Music Source | JioSaavn (official + proxy)     |
+| Storage      | localStorage                    |
+| Packaging    | ares-package (webOS CLI)        |
 
 ---
 
-## Testing
-
-### 1. webOS Simulator
-
-1. Install the [webOS TV SDK](https://webostv.developer.lge.com/develop/tools/sdk-introduction)
-2. Launch the **webOS TV Simulator** from the SDK
-3. In the simulator, load the project directory:
-   ```
-   File → Open → select echo-tv/ folder
-   ```
-4. The app will render at 1920×1080 in the simulator
-5. Use keyboard arrow keys to simulate D-pad; mouse simulates Magic Remote
-
-### 2. Local Server Testing (TV Browser)
-
-1. Serve the app locally:
-   ```bash
-   cd echo-tv
-   npx http-server . -p 8080 --cors
-   ```
-2. On the LG TV, open the **Web Browser** app
-3. Navigate to `http://<YOUR_PC_IP>:8080`
-4. The scaling layer will adapt to the TV's browser viewport
-5. Use the Magic Remote to interact
-
-### 3. Real LG TV (Developer Mode)
-
-1. On the TV: **LG Content Store** → search **Developer Mode** → install & sign in
-2. Enable Developer Mode and note the TV's IP address
-3. On your PC:
-
-   ```bash
-   # Register the TV
-   ares-setup-device
-
-   # Follow prompts:
-   # Device Name: lg-tv
-   # IP: <TV_IP>
-   # Port: 9922
-   # SSH User: prisoner
-
-   # Verify connection
-   ares-device-info -d lg-tv
-   ```
-
-4. Package, install, and launch (see below)
-
----
-
-## Packaging
+## Build & Install
 
 ### Prerequisites
 
-Install the **webOS TV CLI** (part of the webOS TV SDK):
+- [webOS TV SDK](https://webostv.developer.lge.com/develop/tools/cli-installation) (`ares-*` CLI tools)
+- LG TV with Developer Mode enabled
 
-```bash
-npm install -g @webos-tools/cli
-```
-
-Verify installation:
-
-```bash
-ares-package --version
-```
-
-### Generate Signing Key (Optional, for LG Store)
-
-```bash
-ares-generate -t signkey -o mykey
-```
-
-### Package into .ipk
+### Build the IPK
 
 ```bash
 cd echo-tv
-ares-package .
+ares-package . -o ..
 ```
 
-This produces: `com.echo.tv_1.0.0_all.ipk`
+This produces `com.echo.tv_1.0.23_all.ipk` in the parent directory.
 
-### With minification (production):
-
-```bash
-ares-package . --minify
-```
-
----
-
-## Installation
-
-### Connect to TV
+### Install on TV
 
 ```bash
-ares-setup-device
-```
-
-Follow the interactive prompts to add your TV:
-
-- **Name**: `lg-tv`
-- **IP**: Your TV's IP address
-- **Port**: `9922`
-- **User**: `prisoner`
-
-### Install the App
-
-```bash
-ares-install com.echo.tv_1.0.0_all.ipk -d lg-tv
+ares-install --device <your-tv> ../com.echo.tv_1.0.23_all.ipk
 ```
 
 ### Launch
 
 ```bash
-ares-launch com.echo.tv -d lg-tv
-```
-
-### Debug (Chrome DevTools)
-
-```bash
-ares-inspect com.echo.tv -d lg-tv --open
-```
-
-This opens Chrome DevTools connected to the app running on the TV.
-
-### Uninstall
-
-```bash
-ares-install --remove com.echo.tv -d lg-tv
+ares-launch --device <your-tv> com.echo.tv
 ```
 
 ---
 
-## Key Bindings (LG Remote)
+## Storage Keys
 
-| Button     | Key Code | Action                  |
-| ---------- | -------- | ----------------------- |
-| Left       | 37       | Navigate left           |
-| Up         | 38       | Navigate up             |
-| Right      | 39       | Navigate right          |
-| Down       | 40       | Navigate down           |
-| OK / Enter | 13       | Select / Activate       |
-| Back       | 461      | Go back / Close overlay |
-| Red        | 403      | (Reserved)              |
-| Green      | 404      | (Reserved)              |
-| Yellow     | 405      | (Reserved)              |
-| Blue       | 406      | (Reserved)              |
+| Key                 | Purpose                         |
+| ------------------- | ------------------------------- |
+| `echo_playlists`    | User-created playlists & tracks |
+| `echo_liked`        | Liked songs list                |
+| `echo_theme`        | Selected color theme            |
+| `echo_sidebar_size` | Navigation sidebar size         |
+| `echo_recent`       | Recently played tracks          |
 
 ---
 
-## Design Tokens (from Echo Android)
+## Version History
 
-| Token                    | Value                    | Usage                                              |
-| ------------------------ | ------------------------ | -------------------------------------------------- |
-| `--echo-accent`          | `#22bbff`                | Primary brand color                                |
-| `--bg-primary`           | `#000000`                | AMOLED background                                  |
-| `--bg-surface-container` | `#1e1e1e`                | Cards, nav, player bar                             |
-| `--fg-primary`           | `#ffffff`                | Main text                                          |
-| `--fg-secondary`         | `rgba(255,255,255,0.72)` | Secondary text                                     |
-| `--card-corner`          | `12px`                   | Card border radius (from `itemCorner: 8dp` scaled) |
+| Version    | Highlights                                                                    |
+| ---------- | ----------------------------------------------------------------------------- |
+| **1.0.23** | Playlist detail view — browse & remove individual songs                       |
+| **1.0.22** | Auralis branding, playlist rename/delete, liked songs queue, settings credits |
+| **1.0.21** | Lottie-based app icon redesign                                                |
+| **1.0.20** | Heart toggle in full player, seekbar polish                                   |
+| **1.0.19** | Queue side panel, play next, full player layout                               |
+| **1.0.18** | TV-optimized scaling & focus ring tuning                                      |
+| **1.0.13** | Spotify-style bottom bar player                                               |
+| **1.0.8**  | Initial feature-complete release                                              |
 
 ---
 
-## Production Checklist
+## Credits
 
-- [ ] Replace `icon.png` with proper 80×80 branded icon
-- [ ] Add `largeIcon.png` (130×130) for app launcher
-- [ ] Add `bgImage.png` (1920×1080) for app launcher background
-- [ ] Connect `EchoEapk` bridge to actual eapk runtime
-- [ ] Test on webOS 4.x, 5.x, 6.x, and 22+ targets
-- [ ] Verify audio codec support (AAC, MP3, Opus)
-- [ ] Handle TV sleep/wake lifecycle gracefully
-- [ ] Add error boundary for source module failures
-- [ ] Performance profile on low-end webOS devices
+Made with ♥ by **Ruthvik**
+
+---
+
+## License
+
+This project is for personal use on LG webOS TVs.
