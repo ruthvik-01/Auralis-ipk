@@ -24,9 +24,7 @@
     tabSearch:        $('tab-search'),
     tabLibrary:       $('tab-library'),
     /* Home rows */
-    trendingRow:      $('trending-row'),
     newReleasesRow:   $('new-releases-row'),
-    topAlbumsRow:     $('top-albums-row'),
     homeRecentRow:    $('home-recent-row'),
     homeRecentSection: $('home-recent-section'),
     homePlaylistsRow: $('home-playlists-row'),
@@ -510,44 +508,25 @@
 
   function loadHomeFeed() {
     /* Show skeletons */
-    [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
-      row.innerHTML = '';
-      row.appendChild(createSkeletonCards(8));
-    });
+    el.newReleasesRow.innerHTML = '';
+    el.newReleasesRow.appendChild(createSkeletonCards(8));
 
     /* Show personal sections immediately */
     refreshHomePersonal();
 
     window.SaavnSource.getFeed().then(function (sections) {
-      var rowMap = {
-        'Trending Now': el.trendingRow,
-        'New Releases': el.newReleasesRow,
-        'Top Albums': el.topAlbumsRow,
-        'Top Playlists': el.topAlbumsRow,
-        'Charts': el.trendingRow
-      };
-
-      /* Clear rows */
-      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
-        row.innerHTML = '';
-      });
+      /* Clear row */
+      el.newReleasesRow.innerHTML = '';
 
       sections.forEach(function (section) {
         /* Skip any playlist sections from Saavn */
         var titleLower = (section.title || '').toLowerCase();
         if (titleLower.indexOf('playlist') !== -1 || titleLower.indexOf('editor') !== -1) return;
 
-        var row = rowMap[section.title];
-        if (!row) {
-          /* Put in first empty row */
-          if (!el.trendingRow.children.length) row = el.trendingRow;
-          else if (!el.newReleasesRow.children.length) row = el.newReleasesRow;
-          else row = el.topAlbumsRow;
-        }
         (section.items || []).forEach(function (item) {
           /* Skip playlist-type items */
           if (item.type === 'playlist') return;
-          row.appendChild(createMusicCard(item));
+          el.newReleasesRow.appendChild(createMusicCard(item));
         });
       });
 
@@ -557,9 +536,7 @@
       console.log('[App] Feed loaded:', sections.length, 'sections');
     }).catch(function (err) {
       console.error('[App] Feed load failed:', err);
-      [el.trendingRow, el.newReleasesRow, el.topAlbumsRow].forEach(function (row) {
-        row.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">Failed to load — check connection</p>';
-      });
+      el.newReleasesRow.innerHTML = '<p style="color:var(--fg-tertiary);padding:20px;">Failed to load — check connection</p>';
     });
   }
 
